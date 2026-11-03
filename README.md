@@ -52,6 +52,17 @@ To create the zip and DMG:
 
 Artifacts are written to `dist/`.
 
+### Migrating from the local prototype
+
+If the Mac already has Accessibility permission for `local.leicheng.middle-option-bridge`, a local migration build can reuse that TCC identity:
+
+```sh
+MIDDLEFLOW_SIGN_IDENTITY="Apple Development: Your Name (TEAMID)" \
+  ./scripts/build_local_legacy.sh
+```
+
+That script is intentionally local-only. Public builds use `io.github.leicheng42.middleflow` and require their own Accessibility authorization.
+
 ## First run
 
 1. Open MiddleFlow.
