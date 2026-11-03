@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Run tests
+        run: swift test
+      - name: Build
+        run: ./scripts/build_app.sh
+      - name: Import signing identity
+        env:
+          DEVELOPER_ID_P12_BASE64: ${{ secrets.DEVELOPER_ID_P12_BASE64 }}
+          DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          test -n "$DEVELOPER_ID_P12_BASE64"
+          echo "$DEVELOPER_ID_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/developer-id.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security import "$RUNNER_TEMP/developer-id.p12" -k build.keychain \
+            -P "$DEVELOPER_ID_P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          rm "$RUNNER_TEMP/developer-id.p12"
+      - name: Sign and notarize
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+          KEYCHAIN_PROFILE: MiddleFlowRelease
+        run: |
+          IDENTITY="$(security find-identity -v -p codesigning build.keychain | sed -n 's/.*"\(Developer ID Application:.*\)"/\1/p' | head -1)"
+          test -n "$IDENTITY"
+          xcrun notarytool store-credentials "$KEYCHAIN_PROFILE" \
+            --apple-id "$APPLE_ID" \
+            --password "$APP_SPECIFIC_PASSWORD" \
+            --team-id "$TEAM_ID"
+          MIDDLEFLOW_SIGN_IDENTITY="$IDENTITY" ./scripts/build_app.sh
+          ditto -c -k --keepParent build/MiddleFlow.app build/MiddleFlow.zip
+          xcrun notarytool submit build/MiddleFlow.zip --keychain-profile "$KEYCHAIN_PROFILE" --wait
+          xcrun stapler staple build/MiddleFlow.app
+          xcrun stapler validate build/MiddleFlow.app
+          spctl --assess --type execute --verbose=4 build/MiddleFlow.app
+      - name: Package
+        run: PACKAGE_SKIP_BUILD=1 ./scripts/package_release.sh "${GITHUB_REF_NAME#v}"
+      - name: Sign and notarize DMG
+        env:
+          KEYCHAIN_PROFILE: MiddleFlowRelease
+        run: |
+          IDENTITY="$(security find-identity -v -p codesigning build.keychain | sed -n 's/.*"\(Developer ID Application:.*\)"/\1/p' | head -1)"
+          test -n "$IDENTITY"
+          DMG="dist/MiddleFlow-${GITHUB_REF_NAME#v}-macOS-universal.dmg"
+          codesign --force --timestamp --sign "$IDENTITY" "$DMG"
+          xcrun notarytool submit "$DMG" --keychain-profile "$KEYCHAIN_PROFILE" --wait
+          xcrun stapler staple "$DMG"
+          xcrun stapler validate "$DMG"
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

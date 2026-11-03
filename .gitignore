@@ -1,0 +1,13 @@
+.DS_Store
+.build/
+.swiftpm/
+build/
+dist/
+DerivedData/
+MiddleFlow.xcodeproj/
+Resources/MiddleFlow.iconset/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+output/
+logs/
