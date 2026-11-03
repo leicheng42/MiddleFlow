@@ -142,6 +142,10 @@ The tests do not need Accessibility permission or a foreground window. Integrati
 - Return submission depends on the remote application. Fields that insert newlines will add a newline.
 - The app is not affiliated with Doubao, UU Remote, or Logitech.
 
+## Verification
+
+See [docs/verification-2.0.md](docs/verification-2.0.md) for the recorded unit tests and event-tap checks.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

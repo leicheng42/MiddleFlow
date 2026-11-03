@@ -138,7 +138,8 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
             }
         }
         if CommandLine.arguments.contains("--test-window") ||
-            CommandLine.arguments.contains("--self-test") {
+            CommandLine.arguments.contains("--self-test") ||
+            CommandLine.arguments.contains("--double-self-test") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { [weak self] in
                 self?.showTestWindow()
             }
@@ -146,6 +147,11 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         if CommandLine.arguments.contains("--self-test") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
                 self?.runSelfTest()
+            }
+        }
+        if CommandLine.arguments.contains("--double-self-test") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+                self?.runDoubleSelfTest()
             }
         }
         if CommandLine.arguments.contains("--composer-demo") {
@@ -248,6 +254,11 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func setLaunchAtLogin(_ enabled: Bool) {
+        if isLegacyInstall {
+            loginItemError = "本机迁移版继续使用原 MiddleOptionBridge 登录服务"
+            objectWillChange.send()
+            return
+        }
         do {
             try LoginItemManager.setEnabled(enabled)
             preferences.launchAtLogin = enabled
@@ -413,10 +424,23 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
     private var legacyBridgeIsRunning: Bool {
         NSRunningApplication
             .runningApplications(withBundleIdentifier: "local.leicheng.middle-option-bridge")
-            .contains { !$0.isTerminated }
+            .contains {
+                !$0.isTerminated && $0.processIdentifier != getpid()
+            }
+    }
+
+    private var isLegacyInstall: Bool {
+        Bundle.main.bundleIdentifier == "local.leicheng.middle-option-bridge"
     }
 
     private func syncLoginItemState() {
+        if isLegacyInstall {
+            preferences.launchAtLogin = FileManager.default.fileExists(
+                atPath: NSHomeDirectory() +
+                    "/Library/LaunchAgents/local.leicheng.middle-option-bridge.plist"
+            )
+            return
+        }
         guard !isPreview else {
             preferences.launchAtLogin = LoginItemManager.isEnabled
             return
@@ -645,9 +669,13 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
             return
         }
         let now = ProcessInfo.processInfo.systemUptime
-        switch directClassifier.ingest(at: now, point: point) {
+        let gesture = directClassifier.ingest(at: now, point: point)
+        diagnostics.write(
+            "DIRECT_GESTURE gesture=\(gesture) pending=\(directClassifier.pendingClickCount)"
+        )
+        switch gesture {
         case .pendingSingle:
-            cancelPendingSingle()
+            cancelPendingSingle(resetClassifier: false)
             let generation = directGeneration + 1
             directGeneration = generation
             let work = DispatchWorkItem { [weak self] in
@@ -664,7 +692,7 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
                 execute: work
             )
         case .doubleClick:
-            cancelPendingSingle()
+            cancelPendingSingle(resetClassifier: true)
             directGeneration += 1
             guard preferences.doubleClickAction == .returnKey else { return }
             doubleClickSends += 1
@@ -1209,11 +1237,13 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         )
     }
 
-    private func cancelPendingSingle() {
+    private func cancelPendingSingle(resetClassifier: Bool = true) {
         pendingSingleWorkItem?.cancel()
         pendingSingleWorkItem = nil
         directGeneration += 1
-        directClassifier.reset()
+        if resetClassifier {
+            directClassifier.reset()
+        }
     }
 
     private func cancelSessionTimers() {
@@ -1305,6 +1335,42 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         event.setIntegerValueField(.eventSourceUserData, value: KeyboardSynthesizer.eventMarker)
         event.post(tap: .cghidEventTap)
         diagnostics.write("SELF_TEST_MIDDLE_\(down ? "DOWN" : "UP")")
+    }
+
+    private func runDoubleSelfTest() {
+        showTestWindow()
+        guard let window = testWindowController?.window else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                let rect = window.frame
+                let point = CGPoint(x: rect.midX, y: rect.midY)
+                self.postMiddleTestEvent(down: true, at: point)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                    Task { @MainActor in
+                        self.postMiddleTestEvent(down: false, at: point)
+                    }
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
+                    Task { @MainActor in
+                        self.postMiddleTestEvent(down: true, at: point)
+                    }
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                    Task { @MainActor in
+                        self.postMiddleTestEvent(down: false, at: point)
+                    }
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    Task { @MainActor in
+                        self.diagnostics.write(
+                            "DOUBLE_SELF_TEST_RESULT double=\(self.doubleClickSends) " +
+                            "mapped=\(self.mappedPresses)"
+                        )
+                    }
+                }
+            }
+        }
     }
 
     private func runComposerDemo() {
