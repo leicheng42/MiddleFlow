@@ -6,6 +6,8 @@ MiddleFlow turns a mouse middle click into a voice-input trigger for macOS. It i
 
 The app is local-first. It does not record audio, store transcript text in logs, or upload anything.
 
+![MiddleFlow settings](docs/assets/settings-overview.png)
+
 ## Highlights
 
 - Middle click -> configurable voice shortcut, defaulting to **Right Option** for Doubao.
