@@ -410,6 +410,12 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         return !preferences.onboardingCompleted
     }
 
+    private var legacyBridgeIsRunning: Bool {
+        NSRunningApplication
+            .runningApplications(withBundleIdentifier: "local.leicheng.middle-option-bridge")
+            .contains { !$0.isTerminated }
+    }
+
     private func syncLoginItemState() {
         guard !isPreview else {
             preferences.launchAtLogin = LoginItemManager.isEnabled
@@ -523,6 +529,13 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
 
     private func startEventTap() {
         guard !isPreview else { return }
+        guard !legacyBridgeIsRunning else {
+            runtime.mappingActive = false
+            runtime.lastError = "检测到旧版 MiddleOptionBridge 正在运行"
+            diagnostics.write("TAP_SKIPPED_LEGACY_BRIDGE_RUNNING")
+            refreshRuntime()
+            return
+        }
         if eventTap.start() {
             runtime.mappingActive = true
             runtime.lastError = ""
@@ -549,6 +562,7 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         if preferences.mappingEnabled,
            !isPreview,
            !eventTap.isRunning,
+           !legacyBridgeIsRunning,
            PermissionCenter.accessibilityGranted,
            PermissionCenter.canPostEvents {
             startEventTap()
