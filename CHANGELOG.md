@@ -6,7 +6,7 @@
 - Added a real settings top bar with page identity, mapping state, and Doubao readiness.
 - Finalized stable Doubao text without waiting for marked text to clear; live verification reduced stop-to-transcript latency to milliseconds and stop-to-paste to about 260 ms.
 - Added bilingual Chinese/English documentation and a Windows 10/11 WPF edition with a global middle-button hook, Right Alt hold, UU Remote overlay, clipboard paste, tray, settings, diagnostics, and self-contained x64/ARM64 builds.
-- Added Windows CI, portable packaging, and dual-architecture release artifacts.
+- Added Windows CI, portable packaging, and dual-architecture release artifacts; the x64 and ARM64 matrix jobs pass.
 
 ## 2.0.0
 

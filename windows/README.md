@@ -92,7 +92,7 @@ windows/
 
 ## 已知限制
 
-- Windows 版已完成源码级、XAML 编译、双架构发布和本地 smoke tests；GitHub Actions workflow 已加入但尚未产生实际运行结果。真实鼠标、豆包 IME、UU Remote 仍需在 Windows 10/11 机器上做硬件验收。
+- Windows 版已完成源码级、XAML 编译、双架构发布和本地 smoke tests；GitHub Actions 的 Windows x64/ARM64 矩阵构建已通过。真实鼠标、豆包 IME、UU Remote 仍需在 Windows 10/11 机器上做硬件验收。
 - 豆包输入法检测依赖 Windows 键盘布局、CTF 注册表和安装目录；不同豆包版本可能返回不同描述，检测失败时仍可通过测试窗口确认。
 - 自包含包没有代码签名；公开分发前应配置 Authenticode 签名，减少 SmartScreen 提示。
 - 画布应用匹配是进程名/窗口标题规则，不依赖屏幕 OCR 或远程控制协议。

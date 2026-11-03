@@ -187,7 +187,7 @@ Current status:
 - `dotnet build windows/MiddleFlow.Windows.sln -c Release -p:EnableWindowsTargeting=true` passes with 0 warnings and 0 errors.
 - Both console smoke-test harnesses pass, including the Win32 `INPUT` layout check.
 - Self-contained single-file publishing is verified for `win-x64` and `win-arm64`.
-- A Windows CI workflow is present but has not produced a recorded run yet. Real Windows 10/11 runtime acceptance and a signed installer remain pending.
+- Windows CI passes on GitHub Actions `windows-latest` for both the x64 and ARM64 matrix jobs. Real Windows 10/11 runtime acceptance and a signed installer remain pending.
 
 Windows packages are named `MiddleFlow-<version>-win-x64.zip` and `MiddleFlow-<version>-win-arm64.zip`. Unzip and run `MiddleFlow.exe`.
 

@@ -135,7 +135,7 @@ win-x64:   PE32+ executable (GUI) x86-64, for MS Windows
 win-arm64: PE32+ executable (GUI) Aarch64, for MS Windows
 ```
 
-`.github/workflows/windows.yml` is present for Windows CI, but has not completed a recorded run yet. Real Windows runtime acceptance and a signed installer remain pending. See [windows.md](windows.md) for the checklist.
+Windows CI run [41592636127](https://github.com/leicheng42/MiddleFlow/actions/runs/41592636127) completed successfully for both `win-x64` and `win-arm64`. Real Windows hardware runtime acceptance and a signed installer remain pending. See [windows.md](windows.md) for the checklist.
 
 ## What remains unverified
 

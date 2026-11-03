@@ -187,7 +187,7 @@ Windows 版采用与 macOS 相同的产品交互，代码位于 `windows/`：
 - `dotnet build windows/MiddleFlow.Windows.sln -c Release -p:EnableWindowsTargeting=true` 已通过，0 warning、0 error。
 - 两个 console smoke test 均已通过，包括 Win32 `INPUT` 结构布局检查。
 - `win-x64` 与 `win-arm64` self-contained single-file 发布均已验证。
-- Windows CI workflow 已加入，但尚未产生一次实际运行结果；真实 Windows 10/11 运行时验收和签名安装器仍待完成。
+- Windows CI 已在 GitHub Actions 的 `windows-latest` 上通过 x64 与 ARM64 两个矩阵任务；真实 Windows 10/11 运行时验收和签名安装器仍待完成。
 
 发布包命名为 `MiddleFlow-<version>-win-x64.zip` 和 `MiddleFlow-<version>-win-arm64.zip`，解压后直接运行 `MiddleFlow.exe`。
 

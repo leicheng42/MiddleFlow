@@ -2,7 +2,7 @@
 
 > **Preview status:** the Windows 10/11 WPF host, tray, settings pages, global mouse hook, floating voice composer, clipboard transaction, keyboard service, startup integration, diagnostics, and Doubao detection are present under `windows/`.
 >
-> The solution builds successfully with .NET 8 (0 warnings, 0 errors), both console smoke-test harnesses pass, and self-contained `win-x64` / `win-arm64` publishes complete successfully. A Windows CI workflow is included, but it has not run yet. Real Windows 10/11 hardware acceptance, code signing, and a signed installer are still pending.
+> The solution builds successfully with .NET 8 (0 warnings, 0 errors), both console smoke-test harnesses pass, self-contained `win-x64` / `win-arm64` publishes complete successfully, and the GitHub Actions Windows matrix is green for both architectures. Real Windows 10/11 hardware acceptance, code signing, and a signed installer are still pending.
 
 ## What is implemented
 
@@ -123,7 +123,7 @@ win-x64:   PE32+ executable (GUI) x86-64, for MS Windows
 win-arm64: PE32+ executable (GUI) Aarch64, for MS Windows
 ```
 
-`.github/workflows/windows.yml` builds and tests both architectures on `windows-latest` and uploads portable artifacts. The workflow has not produced a recorded green run yet. There is no signed Windows installer.
+`.github/workflows/windows.yml` builds and tests both architectures on `windows-latest` and uploads portable artifacts. Run [41592636127](https://github.com/leicheng42/MiddleFlow/actions/runs/41592636127) completed successfully for `win-x64` and `win-arm64`. There is no signed Windows installer.
 
 ## Verification checklist
 
@@ -143,7 +143,7 @@ Run this on a real Windows 10/11 machine before calling the edition ready:
 ## Known limitations
 
 - The WPF host, core tests, and cross-platform publish build are verified; real Windows runtime acceptance is still pending.
-- The Windows CI workflow is present but has not completed a recorded run yet.
+- The Windows CI workflow passes on both architectures; real hardware acceptance remains pending.
 - No Authenticode-signed installer is available yet; the portable zip may trigger SmartScreen.
 - Windows global hooks can be restricted by integrity level, security software, or remote-desktop software.
 - Remote clipboard synchronization is asynchronous; a paste event does not prove the guest field accepted the text.
