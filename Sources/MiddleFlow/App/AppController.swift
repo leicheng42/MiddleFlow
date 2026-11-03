@@ -31,6 +31,7 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
     @Published private(set) var latestTranscriptAvailable = false
     @Published private(set) var logTail = ""
     @Published private(set) var loginItemError = ""
+    @Published private(set) var doubaoStatus = DoubaoDetector.detect()
 
     let paths: AppPaths
 
@@ -113,6 +114,7 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         if micActive { micStartedAt = Date() }
         buildStatusItem()
         syncLoginItemState()
+        refreshDoubaoStatus()
         refreshRuntime()
         diagnostics.write(
             "READY pid=\(getpid()) preview=\(isPreview) " +
@@ -159,6 +161,11 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
                 self?.runComposerDemo()
             }
         }
+        if CommandLine.arguments.contains("--composer-finalize-test") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { [weak self] in
+                self?.runComposerFinalizeSelfTest()
+            }
+        }
     }
 
     func applicationShouldHandleReopen(
@@ -183,6 +190,7 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         settingsWindowController?.showWindow(nil)
         settingsWindowController?.window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        refreshDoubaoStatus()
         preferences.onboardingCompleted = true
         persistPreferences()
     }
@@ -322,12 +330,18 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         latestClipboardWrite = clipboard.copy(latestTranscript)
         restore(application: application)
         let generation = nextPasteGeneration()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) { [weak self] in
+        let settleDelay = clipboardSettleDelay(for: target.bundleID)
+        diagnostics.write(
+            "CLIPBOARD_SETTLE target=\(target.bundleID) " +
+            "delay=\(String(format: "%.2f", settleDelay))"
+        )
+        DispatchQueue.main.asyncAfter(deadline: .now() + settleDelay) { [weak self] in
             Task { @MainActor in
                 self?.performPaste(
                     target: target,
                     generation: generation,
-                    isFallbackCopy: false
+                    isFallbackCopy: false,
+                    clipboardAttempt: 0
                 )
             }
         }
@@ -400,6 +414,30 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
     func openPrivacy() {
         if let url = URL(string: "https://github.com/leicheng42/MiddleFlow/blob/main/PRIVACY.md") {
             NSWorkspace.shared.open(url)
+        }
+    }
+
+    func refreshDoubaoStatus() {
+        doubaoStatus = DoubaoDetector.detect()
+        diagnostics.write(
+            "DOUBAO_CHECK readiness=\(doubaoStatus.readiness) " +
+            "version=\(doubaoStatus.version)"
+        )
+    }
+
+    func openDoubaoDownload() {
+        NSWorkspace.shared.open(DoubaoDetector.downloadURL)
+    }
+
+    func openKeyboardInputSettings() {
+        let urls = [
+            "x-apple.systempreferences:com.apple.Keyboard-Settings.extension?TextInput",
+            "x-apple.systempreferences:com.apple.preference.keyboard?TextInput"
+        ]
+        for string in urls {
+            if let url = URL(string: string), NSWorkspace.shared.open(url) {
+                return
+            }
         }
     }
 
@@ -850,7 +888,7 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         voiceComposer?.setState(.transcribing)
         lastComposerTextChangeAt = Date()
         diagnostics.write("VOICE_STOP_REQUESTED")
-        scheduleTranscriptCheck(after: 0.16)
+        scheduleTranscriptCheck(after: 0.08)
     }
 
     private func beginTranscription() {
@@ -863,7 +901,7 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         lastComposerTextChangeAt = Date()
         voiceComposer?.setState(.transcribing)
         diagnostics.write("TRANSCRIBING")
-        scheduleTranscriptCheck(after: 0.18)
+        scheduleTranscriptCheck(after: 0.10)
     }
 
     private func scheduleComposerStartTimeout(generation: Int) {
@@ -905,24 +943,27 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         let elapsed = now - stoppedAt
         let stableFor = Date().timeIntervalSince(lastComposerTextChangeAt)
 
-        if !text.isEmpty,
-           !composer.hasMarkedText,
-           elapsed >= 0.30,
-           stableFor >= 0.26 {
-            finishVoiceComposer(with: text, session: session)
+        // Doubao can leave final text marked indefinitely. Once the text has
+        // stopped changing, commit it instead of waiting for marked-text state.
+        switch TranscriptFinalizer.decide(
+            text: text,
+            elapsed: elapsed,
+            stableFor: stableFor
+        ) {
+        case .finish:
+            composer.commitMarkedText()
+            let committed = composer.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            finishVoiceComposer(
+                with: committed.isEmpty ? text : committed,
+                session: session
+            )
             return
-        }
-        if elapsed >= 4.0 {
-            if text.isEmpty {
-                failVoiceComposer("没有收到文字，请重试", reason: "empty_transcript")
-            } else if composer.hasMarkedText {
-                failVoiceComposer("转写尚未完成，请重试", reason: "marked_text_timeout")
-            } else {
-                finishVoiceComposer(with: text, session: session)
-            }
+        case .empty:
+            failVoiceComposer("没有收到文字，请重试", reason: "empty_transcript")
             return
+        case .wait:
+            scheduleTranscriptCheck(after: 0.05)
         }
-        scheduleTranscriptCheck(after: 0.09)
     }
 
     private func finishVoiceComposer(with text: String, session: VoiceSession) {
@@ -940,7 +981,13 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         )
         latestClipboardWrite = clipboard.copy(text)
         voiceComposer?.setState(.copied)
-        diagnostics.write("TRANSCRIPT_READY chars=\(text.count)")
+        let stopTime = session.stoppedAt ?? ProcessInfo.processInfo.systemUptime
+        let latencyMilliseconds = Int(
+            (ProcessInfo.processInfo.systemUptime - stopTime) * 1000
+        )
+        diagnostics.write(
+            "TRANSCRIPT_READY chars=\(text.count) latencyMs=\(max(0, latencyMilliseconds))"
+        )
         refreshRuntime()
 
         let screen = screenContaining(NSEvent.mouseLocation)
@@ -957,7 +1004,12 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         }
 
         if shouldPaste {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) { [weak self] in
+            let settleDelay = clipboardSettleDelay(for: session.originalBundleID)
+            diagnostics.write(
+                "CLIPBOARD_SETTLE target=\(session.originalBundleID) " +
+                "delay=\(String(format: "%.2f", settleDelay))"
+            )
+            DispatchQueue.main.asyncAfter(deadline: .now() + settleDelay) { [weak self] in
                 Task { @MainActor in
                     guard let self, self.composerGeneration == generation else { return }
                     self.attemptAutoPaste(session: session, screen: screen)
@@ -986,7 +1038,7 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         let generation = nextPasteGeneration()
         if !isFrontmost(pid: session.originalPID) {
             restore(application: application)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) { [weak self] in
                 Task { @MainActor in
                     self?.performPaste(
                         target: LatestTarget(
@@ -996,7 +1048,8 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
                             capturedAt: session.startedAt
                         ),
                         generation: generation,
-                        isFallbackCopy: false
+                        isFallbackCopy: false,
+                        clipboardAttempt: 0
                     )
                 }
             }
@@ -1010,14 +1063,16 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
                 capturedAt: session.startedAt
             ),
             generation: generation,
-            isFallbackCopy: false
+            isFallbackCopy: false,
+            clipboardAttempt: 0
         )
     }
 
     private func performPaste(
         target: LatestTarget,
         generation: Int,
-        isFallbackCopy: Bool
+        isFallbackCopy: Bool,
+        clipboardAttempt: Int
     ) {
         guard generation == latestPasteGeneration,
               let application = NSRunningApplication(processIdentifier: target.pid),
@@ -1031,19 +1086,28 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
             failPaste(screen: screenContaining(NSEvent.mouseLocation))
             return
         }
+        guard ensureClipboardCurrent(
+            target: target,
+            generation: generation,
+            isFallbackCopy: isFallbackCopy,
+            attempt: clipboardAttempt
+        ) else { return }
+        diagnostics.write("CLIPBOARD_VERIFIED target=\(target.bundleID)")
         if !isFallbackCopy {
             _ = postLeftClick(at: target.point)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) { [weak self] in
             Task { @MainActor in
                 guard let self, generation == self.latestPasteGeneration,
                       self.isFrontmost(pid: target.pid),
+                      let write = self.latestClipboardWrite,
+                      self.clipboard.isCurrent(write),
                       self.keyboard.sendPaste() else {
                     self?.failPaste(screen: self?.screenContaining(NSEvent.mouseLocation))
                     return
                 }
                 self.lastAutoPasteSent = true
-                self.diagnostics.write("PASTE_SHORTCUT_SENT")
+                self.diagnostics.write("PASTE_SHORTCUT_SENT target=\(target.bundleID)")
                 self.showToast(
                     "已发送粘贴",
                     symbol: "arrow.down.doc.fill",
@@ -1051,7 +1115,7 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
                 )
                 if self.preferences.pasteThenReturn || self.pendingReturnAfterPaste {
                     self.pendingReturnAfterPaste = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
                         Task { @MainActor in
                             guard let self else { return }
                             _ = self.keyboard.sendReturn()
@@ -1070,6 +1134,40 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
 
+    private func ensureClipboardCurrent(
+        target: LatestTarget,
+        generation: Int,
+        isFallbackCopy: Bool,
+        attempt: Int
+    ) -> Bool {
+        guard generation == latestPasteGeneration else { return false }
+        if let write = latestClipboardWrite, clipboard.isCurrent(write) {
+            return true
+        }
+        guard attempt == 0, !latestTranscript.isEmpty,
+              let refreshed = clipboard.copy(latestTranscript) else {
+            failPaste(screen: screenContaining(NSEvent.mouseLocation))
+            return false
+        }
+        latestClipboardWrite = refreshed
+        let settleDelay = clipboardSettleDelay(for: target.bundleID)
+        diagnostics.write(
+            "CLIPBOARD_REFRESHED target=\(target.bundleID) " +
+            "attempt=\(attempt + 1) delay=\(String(format: "%.2f", settleDelay))"
+        )
+        DispatchQueue.main.asyncAfter(deadline: .now() + settleDelay) { [weak self] in
+            Task { @MainActor in
+                self?.performPaste(
+                    target: target,
+                    generation: generation,
+                    isFallbackCopy: isFallbackCopy,
+                    clipboardAttempt: attempt + 1
+                )
+            }
+        }
+        return false
+    }
+
     private func finishPasteCycle() {
         autoPasteInProgress = false
         pendingReturnAfterPaste = false
@@ -1077,7 +1175,10 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         if preferences.restoreClipboardAfterPaste,
            let write = latestClipboardWrite {
             let captured = write
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            let restoreDelay = clipboardRestoreDelay(
+                for: latestTarget?.bundleID ?? ""
+            )
+            DispatchQueue.main.asyncAfter(deadline: .now() + restoreDelay) { [weak self] in
                 Task { @MainActor in
                     _ = self?.clipboard.restoreIfUnchanged(captured)
                 }
@@ -1102,6 +1203,16 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
     private func nextPasteGeneration() -> Int {
         latestPasteGeneration += 1
         return latestPasteGeneration
+    }
+
+    private func clipboardSettleDelay(for bundleID: String) -> TimeInterval {
+        // Remote clipboard agents need time to observe the local pasteboard
+        // before the guest receives Cmd+V. Local apps can use a short delay.
+        preferences.composerBundleIDs.contains(bundleID) ? 0.20 : 0.06
+    }
+
+    private func clipboardRestoreDelay(for bundleID: String) -> TimeInterval {
+        preferences.composerBundleIDs.contains(bundleID) ? 4.0 : 2.0
     }
 
     private func registerPostPasteClick(at point: CGPoint) {
@@ -1398,6 +1509,43 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { [weak self] in
             self?.voiceComposer?.setText("这是语音输入的预览文字，可以直接编辑后再粘贴到目标应用。")
             self?.voiceComposer?.setState(.transcribing)
+        }
+    }
+
+    private func runComposerFinalizeSelfTest() {
+        showTestWindow()
+        guard let window = testWindowController?.window,
+              let screen = screenContaining(NSEvent.mouseLocation) else { return }
+        composerGeneration += 1
+        let generation = composerGeneration
+        let panel = ensureVoiceComposer()
+        panel.configureBadge(shortcut: preferences.voiceShortcut)
+        panel.resetForNewSession()
+        panel.present(on: screen)
+        voiceSession = VoiceSession(
+            originalPID: getpid(),
+            originalBundleID: Bundle.main.bundleIdentifier ?? "",
+            originalName: "MiddleFlow",
+            startedAt: ProcessInfo.processInfo.systemUptime,
+            clickPoint: CGPoint(x: window.frame.midX, y: window.frame.midY),
+            state: .transcribing,
+            didSeeMicrophone: true,
+            stoppedAt: ProcessInfo.processInfo.systemUptime
+        )
+        voiceComposerVisible = true
+        panel.setState(.transcribing)
+        panel.setMarkedTextForTesting("转写速度测试")
+        diagnostics.write("FINALIZE_SELF_TEST_STARTED marked=true")
+        scheduleTranscriptCheck(after: 0.08)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) { [weak self] in
+            Task { @MainActor in
+                guard let self, self.composerGeneration == generation else { return }
+                self.diagnostics.write(
+                    "FINALIZE_SELF_TEST_RESULT chars=\(self.latestTranscript.count) " +
+                    "paste=\(self.lastAutoPasteSent == true) " +
+                    "state=\(self.runtime.voiceState)"
+                )
+            }
         }
     }
 

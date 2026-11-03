@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>MiddleFlow.Windows.Tests</RootNamespace>
+    <AssemblyName>MiddleFlow.Windows.Tests</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MiddleFlow.Core\MiddleFlow.Core.csproj" />
+  </ItemGroup>
+</Project>

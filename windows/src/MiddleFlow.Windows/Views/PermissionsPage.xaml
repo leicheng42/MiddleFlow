@@ -1,0 +1,100 @@
+<UserControl x:Class="MiddleFlow.Windows.Views.PermissionsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock Text="STATUS" Style="{StaticResource EyebrowStyle}" />
+        <TextBlock Text="Windows 上的权限与状态"
+                   Style="{StaticResource PageTitleStyle}"
+                   Margin="0,7,0,0" />
+        <TextBlock Text="MiddleFlow 不需要管理员权限，也不会申请屏幕录制或辅助功能权限。全局鼠标钩子和输入合成由 Windows 用户态 API 提供。"
+                   Style="{StaticResource PageSubtitleStyle}"
+                   MaxWidth="760"
+                   Margin="0,8,0,0" />
+
+        <Grid Margin="0,24,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="7" Height="7" Fill="{StaticResource GreenBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="全局鼠标钩子" Style="{StaticResource CardTitleStyle}" Margin="8,0,0,0" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding HookStatusText}"
+                               Style="{StaticResource DisplayTextStyle}"
+                               FontSize="23"
+                               FontWeight="SemiBold"
+                               Margin="0,16,0,2" />
+                    <TextBlock Text="{Binding HookStatusDetail}"
+                               Style="{StaticResource MutedTextStyle}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="7" Height="7" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="输入映射" Style="{StaticResource CardTitleStyle}" Margin="8,0,0,0" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding MappingStatusText}"
+                               Style="{StaticResource DisplayTextStyle}"
+                               FontSize="23"
+                               FontWeight="SemiBold"
+                               Margin="0,16,0,2" />
+                    <TextBlock Text="{Binding MappingStatusDetail}"
+                               Style="{StaticResource MutedTextStyle}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Style="{StaticResource CardStyle}" Margin="0,14,0,0">
+            <StackPanel>
+                <TextBlock Text="系统集成" Style="{StaticResource CardTitleStyle}" />
+                <TextBlock Text="按需打开 Windows 设置；MiddleFlow 不会修改系统级隐私开关。"
+                           Style="{StaticResource MutedTextStyle}"
+                           Margin="0,4,0,16" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button Content="启动应用设置"
+                            Command="{Binding OpenStartupSettingsCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,8,0" />
+                    <Button Grid.Column="1"
+                            Content="隐私设置"
+                            Command="{Binding OpenPrivacySettingsCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,8,0" />
+                    <Button Grid.Column="2"
+                            Content="打开测试窗口"
+                            Command="{Binding OpenTestWindowCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <Border Background="{StaticResource GreenSoftBrush}"
+                BorderBrush="#CBEBDD"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="18"
+                Margin="0,14,0,0">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE73E;"
+                           Style="{StaticResource IconTextStyle}"
+                           Foreground="{StaticResource GreenBrush}"
+                           Margin="0,0,10,0" />
+                <TextBlock Text="无需额外授权：中键映射依赖低层鼠标钩子，输入依赖 SendInput；两者都在当前用户会话中运行。"
+                           Style="{StaticResource CardBodyStyle}"
+                           Foreground="#237653"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

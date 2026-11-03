@@ -1,0 +1,141 @@
+<UserControl x:Class="MiddleFlow.Windows.Views.VoicePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock Text="VOICE" Style="{StaticResource EyebrowStyle}" />
+        <TextBlock Text="把停顿变成一段完整的文字"
+                   Style="{StaticResource PageTitleStyle}"
+                   Margin="0,7,0,0" />
+        <TextBlock Text="MiddleFlow 不录音、不保存转写正文。它只负责把豆包的输入结果送到你当前的位置。"
+                   Style="{StaticResource PageSubtitleStyle}"
+                   MaxWidth="720"
+                   Margin="0,8,0,0" />
+
+        <Border Style="{StaticResource CardStyle}" Margin="0,24,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="豆包输入法"
+                                   Style="{StaticResource CardTitleStyle}"
+                                   VerticalAlignment="Center" />
+                        <Border CornerRadius="10"
+                                Padding="8,4"
+                                Margin="10,0,0,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{StaticResource GreenSoftBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DoubaoReady}" Value="False">
+                                            <Setter Property="Background" Value="{StaticResource AmberSoftBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding DoubaoStateTitle}"
+                                       FontFamily="{StaticResource BodyFont}"
+                                       FontSize="10"
+                                       FontWeight="SemiBold">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#237653" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DoubaoReady}" Value="False">
+                                                <Setter Property="Foreground" Value="#8B5A16" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="{Binding DoubaoStateDetail}"
+                               Style="{StaticResource CardBodyStyle}"
+                               Margin="0,7,0,0"
+                               MaxWidth="560" />
+                    <TextBlock Text="{Binding DoubaoVersionText}"
+                               Style="{StaticResource MutedTextStyle}"
+                               Margin="0,6,0,0" />
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Content="重新检测"
+                        Command="{Binding RefreshDoubaoCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        VerticalAlignment="Center"
+                        Margin="18,0,0,0" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}" Margin="0,14,0,0">
+            <StackPanel>
+                <TextBlock Text="语音行为" Style="{StaticResource CardTitleStyle}" />
+                <TextBlock Text="右侧 Alt 是豆包 Windows 输入法的默认长按快捷键。"
+                           Style="{StaticResource MutedTextStyle}"
+                           Margin="0,4,0,18" />
+
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="自动粘贴" Style="{StaticResource CardTitleStyle}" FontSize="13" />
+                        <TextBlock Text="浮层结束后写剪贴板并发送 Ctrl+V"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   Margin="0,3,0,0" />
+                    </StackPanel>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding AutoPaste, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchStyle}"
+                              VerticalAlignment="Center" />
+                </Grid>
+
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="粘贴后发送回车" Style="{StaticResource CardTitleStyle}" FontSize="13" />
+                        <TextBlock Text="适合聊天框；双击中键始终会临时覆盖此开关"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   Margin="0,3,0,0" />
+                    </StackPanel>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding PasteThenEnter, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchStyle}"
+                              VerticalAlignment="Center" />
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="粘贴后恢复剪贴板" Style="{StaticResource CardTitleStyle}" FontSize="13" />
+                        <TextBlock Text="仅在剪贴板内容仍是本次转写时恢复，避免覆盖新内容"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   Margin="0,3,0,0" />
+                    </StackPanel>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding RestoreClipboard, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchStyle}"
+                              VerticalAlignment="Center" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource SoftCardStyle}" Margin="0,14,0,0">
+            <StackPanel>
+                <TextBlock Text="隐私说明" Style="{StaticResource CardTitleStyle}" />
+                <TextBlock Text="MiddleFlow 不采集音频、不保存转写正文、不上传任何内容。诊断日志只记录状态和字符数量，不记录文字本身。"
+                           Style="{StaticResource CardBodyStyle}"
+                           Margin="0,8,0,0" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

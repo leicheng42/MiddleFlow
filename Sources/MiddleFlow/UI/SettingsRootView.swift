@@ -5,6 +5,7 @@ private enum SettingsPage: String, CaseIterable, Identifiable {
     case overview
     case gestures
     case voice
+    case inputMethod
     case apps
     case permissions
     case diagnostics
@@ -17,6 +18,7 @@ private enum SettingsPage: String, CaseIterable, Identifiable {
         case .overview: return "概览"
         case .gestures: return "手势"
         case .voice: return "语音"
+        case .inputMethod: return "豆包输入法"
         case .apps: return "应用"
         case .permissions: return "权限"
         case .diagnostics: return "诊断"
@@ -29,6 +31,7 @@ private enum SettingsPage: String, CaseIterable, Identifiable {
         case .overview: return "rectangle.grid.2x2.fill"
         case .gestures: return "cursorarrow.click"
         case .voice: return "waveform"
+        case .inputMethod: return "keyboard.fill"
         case .apps: return "square.stack.fill"
         case .permissions: return "lock.shield.fill"
         case .diagnostics: return "waveform.path.ecg"
@@ -151,32 +154,104 @@ struct SettingsRootView: View {
     }
 
     private var content: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                switch page {
-                case .overview:
-                    overviewPage
-                case .gestures:
-                    gesturesPage
-                case .voice:
-                    voicePage
-                case .apps:
-                    appsPage
-                case .permissions:
-                    permissionsPage
-                case .diagnostics:
-                    diagnosticsPage
-                case .about:
-                    aboutPage
+        VStack(spacing: 0) {
+            topBar
+            Divider().opacity(0.48)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    switch page {
+                    case .overview:
+                        overviewPage
+                    case .gestures:
+                        gesturesPage
+                    case .voice:
+                        voicePage
+                    case .inputMethod:
+                        inputMethodPage
+                    case .apps:
+                        appsPage
+                    case .permissions:
+                        permissionsPage
+                    case .diagnostics:
+                        diagnosticsPage
+                    case .about:
+                        aboutPage
+                    }
                 }
+                .padding(.horizontal, 34)
+                .padding(.top, 24)
+                .padding(.bottom, 36)
+                .frame(maxWidth: 860, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 34)
-            .padding(.top, 38)
-            .padding(.bottom, 36)
-            .frame(maxWidth: 860, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .scrollIndicators(.hidden)
         }
-        .scrollIndicators(.hidden)
+    }
+
+    private var topBar: some View {
+        HStack(spacing: 12) {
+            Image(systemName: page.icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(FlowTheme.ember)
+                .frame(width: 31, height: 31)
+                .background(
+                    FlowTheme.ember.opacity(0.10),
+                    in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                )
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(page.title)
+                    .font(.system(size: 13.5, weight: .bold, design: .rounded))
+                Text("MiddleFlow · 本地语音桥接")
+                    .font(.system(size: 9.5, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 16)
+
+            StatusPill(
+                title: mappingStatusTitle,
+                color: mappingStatusColor,
+                pulse: app.runtime.mappingActive
+            )
+
+            Button {
+                app.refreshDoubaoStatus()
+                page = .inputMethod
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "keyboard")
+                        .font(.system(size: 11.5, weight: .semibold))
+                    Text("豆包 · \(app.doubaoStatus.readiness.title)")
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 8.5, weight: .bold))
+                        .opacity(0.48)
+                }
+                .foregroundStyle(app.doubaoStatus.isReady ? FlowTheme.mint : Color.orange)
+                .padding(.horizontal, 11)
+                .padding(.vertical, 6)
+                .background(
+                    (app.doubaoStatus.isReady ? FlowTheme.mint : Color.orange).opacity(0.10),
+                    in: Capsule()
+                )
+            }
+            .buttonStyle(.plain)
+            .help("检查豆包输入法安装和输入源状态")
+        }
+        .padding(.horizontal, 24)
+        .frame(height: 56)
+        .background(.ultraThinMaterial)
+    }
+
+    private var mappingStatusTitle: String {
+        if app.runtime.mappingActive { return "监听中" }
+        return app.preferences.mappingEnabled ? "待授权" : "已暂停"
+    }
+
+    private var mappingStatusColor: Color {
+        if app.runtime.mappingActive { return FlowTheme.mint }
+        return app.preferences.mappingEnabled ? .orange : .secondary
     }
 
     private var overviewPage: some View {
@@ -518,6 +593,229 @@ struct SettingsRootView: View {
                         .buttonStyle(FlowButtonStyle(kind: .primary))
                 }
             }
+        }
+    }
+
+    private var inputMethodPage: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            SectionHeader(
+                eyebrow: "Input method",
+                title: "先让豆包准备好",
+                subtitle: "MiddleFlow 通过豆包输入法完成语音识别。这里会检查安装、系统注册和当前输入源，并给出对应的处理步骤。"
+            )
+
+            FlowCard {
+                VStack(alignment: .leading, spacing: 18) {
+                    HStack(alignment: .top, spacing: 17) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                                .fill(doubaoTint.opacity(0.10))
+                            Image(systemName: "keyboard.fill")
+                                .font(.system(size: 26, weight: .medium))
+                                .foregroundStyle(doubaoTint)
+                        }
+                        .frame(width: 62, height: 62)
+
+                        VStack(alignment: .leading, spacing: 5) {
+                            HStack(spacing: 9) {
+                                Text(doubaoHeadline)
+                                    .font(.system(size: 19, weight: .bold, design: .rounded))
+                                StatusPill(
+                                    title: app.doubaoStatus.readiness.title,
+                                    color: doubaoTint,
+                                    pulse: app.doubaoStatus.isReady
+                                )
+                            }
+                            Text(doubaoDetail)
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        Button {
+                            app.refreshDoubaoStatus()
+                        } label: {
+                            Label("重新检测", systemImage: "arrow.clockwise")
+                        }
+                        .buttonStyle(FlowButtonStyle(kind: .secondary))
+                    }
+
+                    Divider().opacity(0.55)
+
+                    HStack(spacing: 10) {
+                        DoubaoCheckCell(
+                            title: "安装包",
+                            value: app.doubaoStatus.installed ? "已安装" : "未找到",
+                            detail: app.doubaoStatus.version.isEmpty
+                                ? "DoubaoIme.app"
+                                : "版本 \(app.doubaoStatus.version)",
+                            ready: app.doubaoStatus.installed
+                        )
+                        DoubaoCheckCell(
+                            title: "系统注册",
+                            value: app.doubaoStatus.registered ? "已注册" : "未注册",
+                            detail: "Input source",
+                            ready: app.doubaoStatus.registered
+                        )
+                        DoubaoCheckCell(
+                            title: "当前输入源",
+                            value: app.doubaoStatus.selected ? "豆包" : "其他输入法",
+                            detail: app.doubaoStatus.selected ? "可以直接开始" : "请切换到豆包",
+                            ready: app.doubaoStatus.selected
+                        )
+                    }
+
+                    HStack(spacing: 10) {
+                        Button {
+                            app.openDoubaoDownload()
+                        } label: {
+                            Label("打开豆包官网", systemImage: "arrow.up.right")
+                        }
+                        .buttonStyle(FlowButtonStyle(kind: .primary))
+
+                        Button {
+                            app.openKeyboardInputSettings()
+                        } label: {
+                            Label("打开键盘设置", systemImage: "keyboard")
+                        }
+                        .buttonStyle(FlowButtonStyle(kind: .secondary))
+
+                        if app.doubaoStatus.isReady {
+                            Button {
+                                app.showTestWindow()
+                            } label: {
+                                Label("打开测试窗口", systemImage: "play.fill")
+                            }
+                            .buttonStyle(FlowButtonStyle(kind: .secondary))
+                        }
+
+                        Spacer()
+
+                        Text("检测于 \(app.doubaoStatus.checkedAt.formatted(date: .omitted, time: .shortened))")
+                            .font(.system(size: 9.5, design: .monospaced))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+
+            if !app.doubaoStatus.isReady {
+                PermissionCallout(
+                    title: doubaoNeedsActionTitle,
+                    detail: doubaoNeedsActionDetail,
+                    action: app.doubaoStatus.installed ? "打开键盘设置" : "下载豆包"
+                ) {
+                    if app.doubaoStatus.installed {
+                        app.openKeyboardInputSettings()
+                    } else {
+                        app.openDoubaoDownload()
+                    }
+                }
+            }
+
+            FlowCard {
+                VStack(alignment: .leading, spacing: 15) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("从安装到可用")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                        Text("按顺序完成一次，之后 MiddleFlow 会在每次打开设置时自动检测。")
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    DoubaoStepRow(
+                        number: "01",
+                        title: "安装豆包输入法",
+                        detail: "从豆包输入法官网下载 macOS 版本，完成安装并打开一次。"
+                    )
+                    DoubaoStepRow(
+                        number: "02",
+                        title: "添加到系统输入法",
+                        detail: "打开“系统设置 → 键盘 → 输入法”，添加“豆包输入法”。"
+                    )
+                    DoubaoStepRow(
+                        number: "03",
+                        title: "切换到豆包输入源",
+                        detail: "从菜单栏输入法列表选择豆包，并确认可以正常输入中文。"
+                    )
+                    DoubaoStepRow(
+                        number: "04",
+                        title: "设置右侧 Option",
+                        detail: "在豆包语音输入设置中，把“免按模式”的快捷键设为“右侧 Option”。"
+                    )
+                    DoubaoStepRow(
+                        number: "05",
+                        title: "回到 MiddleFlow 验证",
+                        detail: "点击“重新检测”，状态变为“已安装并启用”后，打开测试窗口走一次完整流程。"
+                    )
+                }
+            }
+
+            HStack(spacing: 14) {
+                InfoCard(
+                    icon: "lock.shield",
+                    title: "只读取状态",
+                    text: "检测只读取输入法安装路径、版本和系统输入源 ID，不读取按键内容或转写正文。"
+                )
+                InfoCard(
+                    icon: "keyboard.badge.ellipsis",
+                    title: "快捷键要一致",
+                    text: "豆包的语音快捷键必须与 MiddleFlow 的“语音”页面一致。默认是右侧 Option。"
+                )
+            }
+        }
+    }
+
+    private var doubaoTint: Color {
+        switch app.doubaoStatus.readiness {
+        case .ready: return FlowTheme.mint
+        case .missing: return FlowTheme.ember
+        case .installedNotRegistered, .registeredNotSelected: return .orange
+        }
+    }
+
+    private var doubaoHeadline: String {
+        switch app.doubaoStatus.readiness {
+        case .ready: return "豆包输入法已经就绪"
+        case .missing: return "还没有安装豆包输入法"
+        case .installedNotRegistered: return "安装完成，还差系统注册"
+        case .registeredNotSelected: return "切换到豆包输入源"
+        }
+    }
+
+    private var doubaoDetail: String {
+        switch app.doubaoStatus.readiness {
+        case .ready:
+            return "安装、系统注册和当前输入源都正确。现在可以把光标放进输入框，按鼠标中键开始语音。"
+        case .missing:
+            return "MiddleFlow 需要使用豆包输入法完成语音转写。下载安装后，按下方步骤添加输入源。"
+        case .installedNotRegistered:
+            return "已经在 \(app.doubaoStatus.bundlePath) 找到安装包，但系统还没有注册豆包输入源。"
+        case .registeredNotSelected:
+            return "豆包输入法已经注册，但当前使用的是 \(app.doubaoStatus.currentInputSourceID)。切换后再重新检测。"
+        }
+    }
+
+    private var doubaoNeedsActionTitle: String {
+        switch app.doubaoStatus.readiness {
+        case .ready: return ""
+        case .missing: return "需要先安装豆包输入法"
+        case .installedNotRegistered: return "需要把豆包添加到系统输入法"
+        case .registeredNotSelected: return "需要切换到豆包输入源"
+        }
+    }
+
+    private var doubaoNeedsActionDetail: String {
+        switch app.doubaoStatus.readiness {
+        case .ready:
+            return ""
+        case .missing:
+            return "打开豆包输入法官网下载 macOS 版本。安装后回到这里重新检测。"
+        case .installedNotRegistered:
+            return "打开键盘设置，在输入法列表中添加豆包，然后回到这里重新检测。"
+        case .registeredNotSelected:
+            return "从菜单栏输入法菜单选择豆包，或打开键盘设置调整输入源顺序。"
         }
     }
 
@@ -1071,6 +1369,66 @@ private struct PermissionRow: View {
                 .buttonStyle(FlowButtonStyle(kind: .quiet))
         }
         .padding(.vertical, 12)
+    }
+}
+
+private struct DoubaoCheckCell: View {
+    let title: String
+    let value: String
+    let detail: String
+    let ready: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(ready ? FlowTheme.mint : Color.orange)
+                    .frame(width: 6, height: 6)
+                Text(title)
+                    .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+            Text(value)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(ready ? Color.primary : Color.orange)
+            Text(detail)
+                .font(.system(size: 9.5, design: .monospaced))
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .stroke(FlowTheme.subtleBorder, lineWidth: 1)
+        }
+    }
+}
+
+private struct DoubaoStepRow: View {
+    let number: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 13) {
+            Text(number)
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(FlowTheme.ember)
+                .frame(width: 31, height: 24)
+                .background(FlowTheme.ember.opacity(0.10), in: Capsule())
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                Text(detail)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 1)
     }
 }
 

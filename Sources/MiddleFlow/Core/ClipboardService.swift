@@ -8,6 +8,7 @@ struct ClipboardSnapshot {
 struct ClipboardWrite {
     let previous: ClipboardSnapshot
     let changeCount: Int
+    let text: String
 }
 
 final class ClipboardService {
@@ -17,7 +18,17 @@ final class ClipboardService {
         let previous = capture(pasteboard)
         pasteboard.clearContents()
         guard pasteboard.setString(text, forType: .string) else { return nil }
-        return ClipboardWrite(previous: previous, changeCount: pasteboard.changeCount)
+        return ClipboardWrite(
+            previous: previous,
+            changeCount: pasteboard.changeCount,
+            text: text
+        )
+    }
+
+    func isCurrent(_ write: ClipboardWrite) -> Bool {
+        let pasteboard = NSPasteboard.general
+        return pasteboard.changeCount == write.changeCount &&
+            pasteboard.string(forType: .string) == write.text
     }
 
     func restore(_ snapshot: ClipboardSnapshot) {

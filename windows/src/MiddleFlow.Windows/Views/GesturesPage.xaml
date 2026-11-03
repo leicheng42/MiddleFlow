@@ -1,0 +1,107 @@
+<UserControl x:Class="MiddleFlow.Windows.Views.GesturesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock Text="GESTURES" Style="{StaticResource EyebrowStyle}" />
+        <TextBlock Text="让一个中键有两种动作"
+                   Style="{StaticResource PageTitleStyle}"
+                   Margin="0,7,0,0" />
+        <TextBlock Text="单击开始或停止语音；双击停止并在转写完成后发送回车。所有手势都由 Windows 低层鼠标钩子统一接管。"
+                   Style="{StaticResource PageSubtitleStyle}"
+                   MaxWidth="720"
+                   Margin="0,8,0,0" />
+
+        <Border Style="{StaticResource CardStyle}" Margin="0,24,0,0">
+            <StackPanel>
+                <TextBlock Text="手势开关" Style="{StaticResource CardTitleStyle}" />
+                <TextBlock Text="修改会立即生效，无需重启应用。"
+                           Style="{StaticResource MutedTextStyle}"
+                           Margin="0,4,0,18" />
+
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="双击发送 Return" Style="{StaticResource CardTitleStyle}" FontSize="13" />
+                        <TextBlock Text="在画布浮层中，等待文字稳定并完成粘贴后发送"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   Margin="0,3,0,0" />
+                    </StackPanel>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding DoubleClickEnabled, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchStyle}"
+                              VerticalAlignment="Center" />
+                </Grid>
+
+                <Border BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,1,0,0"
+                        Padding="0,16,0,0">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="双击判定间隔" Style="{StaticResource CardTitleStyle}" FontSize="13" />
+                            <TextBlock Text="{Binding DoubleClickIntervalLabel}"
+                                       Style="{StaticResource MutedTextStyle}"
+                                       HorizontalAlignment="Right" />
+                        </Grid>
+                        <Slider Minimum="150"
+                                Maximum="600"
+                                TickFrequency="25"
+                                IsSnapToTickEnabled="True"
+                                Value="{Binding DoubleClickIntervalMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                Margin="0,14,0,0" />
+                        <TextBlock Text="间隔越短，越容易把连续单击识别为双击；建议保持 260 ms。"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <Grid Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <TextBlock Text="直接输入" Style="{StaticResource CardTitleStyle}" />
+                    <TextBlock Text="普通应用不弹浮层，豆包直接把文字送进当前输入框。"
+                               Style="{StaticResource CardBodyStyle}"
+                               Margin="0,8,0,16" />
+                    <CheckBox IsChecked="{Binding DirectModeEnabled, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchStyle}"
+                              HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <TextBlock Text="画布浮层" Style="{StaticResource CardTitleStyle}" />
+                    <TextBlock Text="UU Remote 等目标应用使用浮层收集文字，再自动粘贴回去。"
+                               Style="{StaticResource CardBodyStyle}"
+                               Margin="0,8,0,16" />
+                    <CheckBox IsChecked="{Binding OverlayEnabled, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchStyle}"
+                              HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Style="{StaticResource SoftCardStyle}" Margin="0,14,0,0">
+            <StackPanel>
+                <TextBlock Text="推荐流程" Style="{StaticResource CardTitleStyle}" />
+                <TextBlock Text="1  在目标输入框单击中键，按住右侧 Alt 开始说话"
+                           Style="{StaticResource CardBodyStyle}"
+                           Margin="0,10,0,0" />
+                <TextBlock Text="2  说完再单击一次中键，释放右侧 Alt"
+                           Style="{StaticResource CardBodyStyle}"
+                           Margin="0,5,0,0" />
+                <TextBlock Text="3  需要直接发送时，双击中键；浮层会等待文字稳定后粘贴并回车"
+                           Style="{StaticResource CardBodyStyle}"
+                           Margin="0,5,0,0" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

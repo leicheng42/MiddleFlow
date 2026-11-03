@@ -1,11 +1,12 @@
 # Privacy
 
-MiddleFlow is a local macOS utility. It does not operate a server and does not upload data.
+MiddleFlow is a local macOS and Windows utility. It does not operate a server and does not upload data.
 
 ## What the app accesses
 
-- Accessibility events for the middle mouse button (`CG button 2`).
-- Keyboard event synthesis for the configured voice shortcut, Return, and `Cmd+V`.
+- macOS Accessibility events for the middle mouse button (`CG button 2`).
+- Windows low-level mouse-hook events for the middle mouse button.
+- Keyboard event synthesis for the configured voice shortcut, Return, and `Cmd+V` / `Ctrl+V`.
 - The system clipboard when a transcript is ready or the user asks to paste the latest transcript.
 - Audio device running state, only to detect when a microphone starts or stops. The app does not capture audio samples.
 
@@ -15,6 +16,7 @@ Preferences are stored at:
 
 ```text
 ~/Library/Application Support/MiddleFlow/preferences.json
+%LOCALAPPDATA%\MiddleFlow\settings.json
 ```
 
 Runtime status is stored at:
@@ -27,6 +29,7 @@ Diagnostics are stored at:
 
 ```text
 ~/Library/Application Support/MiddleFlow/diagnostics.log
+%LOCALAPPDATA%\MiddleFlow\diagnostics.log
 ```
 
 Diagnostics contain event types, state names, timestamps, character counts, and error descriptions. They do not contain transcript text, ordinary typed keys, or audio.

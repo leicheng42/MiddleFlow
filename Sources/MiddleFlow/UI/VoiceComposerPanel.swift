@@ -146,6 +146,20 @@ final class VoiceComposerPanel: NSPanel, NSTextViewDelegate {
     var text: String { textView.string }
     var hasMarkedText: Bool { textView.markedRange().location != NSNotFound }
 
+    func commitMarkedText() {
+        textView.unmarkText()
+    }
+
+    func setMarkedTextForTesting(_ text: String) {
+        let selection = NSRange(location: text.utf16.count, length: 0)
+        textView.setMarkedText(
+            text,
+            selectedRange: selection,
+            replacementRange: NSRange(location: NSNotFound, length: 0)
+        )
+        onTextChanged?()
+    }
+
     init() {
         let rect = NSRect(x: 0, y: 0, width: Self.width, height: Self.height)
         super.init(

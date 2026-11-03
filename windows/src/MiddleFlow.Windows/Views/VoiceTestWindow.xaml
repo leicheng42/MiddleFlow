@@ -1,0 +1,117 @@
+<Window x:Class="MiddleFlow.Windows.Views.VoiceTestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MiddleFlow 语音测试"
+        Width="660"
+        Height="520"
+        MinWidth="520"
+        MinHeight="420"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource WindowBackgroundBrush}">
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Border Width="34" Height="34"
+                        CornerRadius="10"
+                        Background="{StaticResource AccentSoftBrush}">
+                    <TextBlock Text="&#xE9D9;"
+                               Style="{StaticResource IconTextStyle}"
+                               Foreground="{StaticResource AccentBrush}" />
+                </Border>
+                <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="语音测试窗口"
+                               Style="{StaticResource DisplayTextStyle}"
+                               FontSize="20"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="测试中键映射、豆包输入和回车发送"
+                               Style="{StaticResource MutedTextStyle}" />
+                </StackPanel>
+            </StackPanel>
+            <TextBlock Text="1  确认豆包输入法已选中。 2  点击下方文本框，让光标保持在那里。 3  单击中键开始，再单击停止。 4  双击中键测试停止并发送回车。"
+                       Style="{StaticResource CardBodyStyle}"
+                       Margin="0,16,0,0"
+                       MaxWidth="590" />
+        </StackPanel>
+
+        <Border Grid.Row="1"
+                Background="#F8F4EF"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="12"
+                Margin="0,18,0,14">
+            <Grid>
+                <TextBlock x:Name="Placeholder"
+                           Text="在这里输入或说点什么，测试光标位置和转写结果…"
+                           Style="{StaticResource MutedTextStyle}"
+                           Margin="2,1,0,0"
+                           IsHitTestVisible="False" />
+                <TextBox x:Name="TestBox"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         FontFamily="{StaticResource BodyFont}"
+                         FontSize="15"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         CaretBrush="{StaticResource AccentBrush}"
+                         SelectionBrush="#55F26A3D"
+                         Padding="0"
+                         TextChanged="TestBox_TextChanged" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource SoftCardStyle}" Padding="16">
+                <StackPanel>
+                    <TextBlock Text="当前状态" Style="{StaticResource CardTitleStyle}" />
+                    <TextBlock Text="{Binding VoiceStatusText}"
+                               Style="{StaticResource DisplayTextStyle}"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Margin="0,8,0,2" />
+                    <TextBlock Text="{Binding LastEvent}"
+                               Style="{StaticResource MutedTextStyle}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource SoftCardStyle}" Padding="16">
+                <StackPanel>
+                    <TextBlock Text="使用提示" Style="{StaticResource CardTitleStyle}" />
+                    <TextBlock Text="如果文字没有出现，请先回到豆包输入法设置确认快捷键是“右侧 Alt”，并检查输入法是否已切换。"
+                               Style="{StaticResource CardBodyStyle}"
+                               Margin="0,8,0,0" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="3" Margin="0,16,0,0">
+            <TextBlock Text="测试窗口是普通应用，使用直接输入模式；UU Remote 等画布应用会自动使用浮层。"
+                       Style="{StaticResource MutedTextStyle}"
+                       VerticalAlignment="Center"
+                       MaxWidth="420" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="聚焦输入框"
+                        Click="FocusButton_Click"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Margin="0,0,8,0" />
+                <Button Content="关闭"
+                        Click="CloseButton_Click"
+                        Style="{StaticResource PrimaryButtonStyle}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

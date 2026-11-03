@@ -1,0 +1,210 @@
+<UserControl x:Class="MiddleFlow.Windows.Views.OverviewPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock Text="CONTROL CENTER" Style="{StaticResource EyebrowStyle}" />
+        <TextBlock Text="把声音变成动作"
+                   Style="{StaticResource PageTitleStyle}"
+                   Margin="0,7,0,0" />
+        <TextBlock Text="中键唤起豆包语音输入；在 UU Remote 等画布应用中，MiddleFlow 会把转写结果自动送回原来的输入位置。"
+                   Style="{StaticResource PageSubtitleStyle}"
+                   MaxWidth="720"
+                   Margin="0,8,0,0" />
+
+        <Border Style="{StaticResource CardStyle}"
+                Background="#FFF8F4"
+                Padding="0"
+                Margin="0,24,0,0">
+            <Grid Margin="26">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.35*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="86" Height="86"
+                            CornerRadius="43"
+                            Background="#FFF0E9"
+                            Margin="0,0,20,0">
+                        <Border Width="58" Height="58"
+                                CornerRadius="29"
+                                Background="{StaticResource AccentBrush}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="&#xE9D9;"
+                                       Style="{StaticResource IconTextStyle}"
+                                       FontSize="25"
+                                       Foreground="White" />
+                        </Border>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="随时可以开口"
+                                       Style="{StaticResource DisplayTextStyle}"
+                                       FontSize="22"
+                                       FontWeight="SemiBold" />
+                            <Border Background="{StaticResource GreenSoftBrush}"
+                                    CornerRadius="11"
+                                    Padding="8,4"
+                                    Margin="10,0,0,0"
+                                    VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="6" Height="6"
+                                             Fill="{StaticResource GreenBrush}"
+                                             VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding MappingStatusText}"
+                                               FontFamily="{StaticResource BodyFont}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="#237653"
+                                               Margin="5,0,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="把光标放进输入框，单击鼠标中键开始语音输入。"
+                                   Style="{StaticResource PageSubtitleStyle}"
+                                   Margin="0,8,0,0" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                    <Button Content="打开测试窗口"
+                            Command="{Binding OpenTestWindowCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            HorizontalAlignment="Right"
+                            Margin="0,0,0,10" />
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right">
+                        <CheckBox IsChecked="{Binding MappingEnabled, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  VerticalAlignment="Center" />
+                        <TextBlock Text="启用中键映射"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   Margin="8,0,0,0"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource CardStyle}" Padding="18">
+                <StackPanel>
+                    <TextBlock Text="中键次数" Style="{StaticResource MutedTextStyle}" />
+                    <TextBlock Text="{Binding MappedClicks}"
+                               Style="{StaticResource StatNumberStyle}"
+                               Margin="0,4,0,0" />
+                    <TextBlock Text="本次运行" Style="{StaticResource MutedTextStyle}" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="18">
+                <StackPanel>
+                    <TextBlock Text="双击发送" Style="{StaticResource MutedTextStyle}" />
+                    <TextBlock Text="{Binding DoubleClicks}"
+                               Style="{StaticResource StatNumberStyle}"
+                               Margin="0,4,0,0" />
+                    <TextBlock Text="Return 动作" Style="{StaticResource MutedTextStyle}" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="4" Style="{StaticResource CardStyle}" Padding="18">
+                <StackPanel>
+                    <TextBlock Text="语音快捷键" Style="{StaticResource MutedTextStyle}" />
+                    <TextBlock Text="Right Alt"
+                               Style="{StaticResource DisplayTextStyle}"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Margin="0,7,0,1" />
+                    <TextBlock Text="豆包触发键" Style="{StaticResource MutedTextStyle}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Style="{StaticResource CardStyle}" Margin="0,14,0,0">
+            <StackPanel>
+                <Grid>
+                    <StackPanel>
+                        <TextBlock Text="快速设置" Style="{StaticResource CardTitleStyle}" />
+                        <TextBlock Text="常用开关集中在这里"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+                    <Border Background="{StaticResource GreenSoftBrush}"
+                            CornerRadius="11"
+                            Padding="9,5"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top">
+                        <TextBlock Text="{Binding MappingStatusText}"
+                                   FontFamily="{StaticResource BodyFont}"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   Foreground="#237653" />
+                    </Border>
+                </Grid>
+
+                <Border BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,1,0,0"
+                        Margin="0,18,0,0"
+                        Padding="0,16,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="中键映射" Style="{StaticResource CardTitleStyle}" FontSize="13" />
+                            <TextBlock Text="关闭后恢复普通中键，不触发语音输入"
+                                       Style="{StaticResource MutedTextStyle}"
+                                       Margin="0,3,0,0" />
+                        </StackPanel>
+                        <CheckBox Grid.Column="1"
+                                  IsChecked="{Binding MappingEnabled, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+
+                <Border BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,1,0,0"
+                        Margin="0,14,0,0"
+                        Padding="0,14,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="双击中键发送" Style="{StaticResource CardTitleStyle}" FontSize="13" />
+                            <TextBlock Text="语音流程中等待转写粘贴完成；普通应用中发送 Return"
+                                       Style="{StaticResource MutedTextStyle}"
+                                       Margin="0,3,0,0" />
+                        </StackPanel>
+                        <CheckBox Grid.Column="1"
+                                  IsChecked="{Binding DoubleClickEnabled, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource SoftCardStyle}" Margin="0,14,0,0" Padding="18">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE946;"
+                           Style="{StaticResource IconTextStyle}"
+                           Foreground="{StaticResource AccentBrush}"
+                           Margin="0,0,10,0" />
+                <TextBlock Text="首次使用建议先打开测试窗口，确认豆包输入法已选中，再在 UU Remote 中测试自动粘贴。"
+                           Style="{StaticResource CardBodyStyle}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>
