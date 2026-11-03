@@ -414,6 +414,10 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "2.0.0"
     }
 
+    var usesLegacyLoginItem: Bool {
+        isLegacyInstall
+    }
+
     private var shouldShowSettingsOnLaunch: Bool {
         if isPreview || CommandLine.arguments.contains("--show-settings") {
             return true

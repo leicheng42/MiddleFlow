@@ -627,7 +627,9 @@ struct SettingsRootView: View {
                     PermissionRow(
                         icon: "power",
                         title: "登录时启动",
-                        detail: "使用 macOS 官方 SMAppService 注册，不写固定用户路径",
+                        detail: app.usesLegacyLoginItem
+                            ? "沿用原 MiddleOptionBridge 登录服务"
+                            : "使用 macOS 官方 SMAppService 注册，不写固定用户路径",
                         granted: app.preferences.launchAtLogin,
                         action: {
                             app.setLaunchAtLogin(!app.preferences.launchAtLogin)
