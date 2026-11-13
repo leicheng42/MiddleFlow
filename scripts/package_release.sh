@@ -25,7 +25,11 @@ hdiutil create \
   -format UDZO \
   "dist/MiddleFlow-${VERSION}-macOS-universal.dmg"
 
-find dist -maxdepth 1 -type f -name "MiddleFlow-${VERSION}-*" -print \
-  | sort \
-  | xargs shasum -a 256 > dist/SHA256SUMS
+(
+  cd dist
+  find . -maxdepth 1 -type f -name "MiddleFlow-${VERSION}-*" -print \
+    | sed 's#^./##' \
+    | sort \
+    | xargs shasum -a 256 > SHA256SUMS
+)
 echo "Packaged in dist/"
