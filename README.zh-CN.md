@@ -62,7 +62,7 @@ open build/MiddleFlow.app
 生成 zip 和 DMG：
 
 ```sh
-./scripts/package_release.sh 2.0.0
+./scripts/package_release.sh 2.0.1
 ```
 
 产物位于 `dist/`。

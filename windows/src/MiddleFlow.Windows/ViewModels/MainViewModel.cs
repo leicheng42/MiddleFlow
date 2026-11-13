@@ -42,7 +42,7 @@ public enum VoiceMode
 
 public sealed class MainViewModel : ObservableObject, IDisposable
 {
-    public const string ProductVersion = "2.0.0";
+    public const string ProductVersion = "2.0.1";
     public const string RepositoryUrl = "https://github.com/leicheng42/MiddleFlow";
 
     private readonly Dispatcher _dispatcher;

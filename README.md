@@ -40,7 +40,7 @@ Windows 的功能范围与验证边界见 [docs/windows.md](docs/windows.md)。
 
 从 GitHub Releases 下载最新的 `MiddleFlow-*-macOS-universal.zip` 或 `.dmg`。
 
-当前本地开发包使用 Apple Development 证书签名。公开分发还需要 **Developer ID Application** 签名并经过 Apple notarization；在完成这一步之前，下载包可能触发 Gatekeeper 提示。请不要通过关闭 Gatekeeper 或修改 TCC 数据库来绕过安装限制。
+GitHub 预览包会做 ad-hoc 完整性签名；本地开发构建可使用 Apple Development 证书。公开分发还需要 **Developer ID Application** 签名并经过 Apple notarization；在完成这一步之前，下载包可能触发 Gatekeeper 提示。请不要通过关闭 Gatekeeper 或修改 TCC 数据库来绕过安装限制。
 
 ### 从源码构建
 
@@ -62,7 +62,7 @@ open build/MiddleFlow.app
 生成 zip 和 DMG：
 
 ```sh
-./scripts/package_release.sh 2.0.0
+./scripts/package_release.sh 2.0.1
 ```
 
 产物位于 `dist/`。

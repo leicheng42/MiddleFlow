@@ -55,12 +55,13 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
     private var signalSources: [DispatchSourceSignal] = []
 
     private var pendingSingleWorkItem: DispatchWorkItem?
-    private var composerStartWorkItem: DispatchWorkItem?
+    private var pendingComposerLaunchWorkItem: DispatchWorkItem?
     private var composerToggleWorkItem: DispatchWorkItem?
     private var transcriptCheckWorkItem: DispatchWorkItem?
     private var composerTimeoutWorkItem: DispatchWorkItem?
     private var directGeneration = 0
     private var composerGeneration = 0
+    private var composerLaunchGeneration = 0
 
     private var pressed = false
     private var pressedAt = Date.distantPast
@@ -69,6 +70,9 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
     private var composerTransitioning = false
     private var autoPasteInProgress = false
     private var pendingReturnAfterPaste = false
+    private var pasteShortcutSentForCurrentCycle = false
+    private var returnAfterPasteScheduled = false
+    private var pasteCycleCompletionWorkItem: DispatchWorkItem?
     private var lastComposerTextChangeAt = Date.distantPast
     private var latestTranscript = ""
     private var latestClipboardWrite: ClipboardWrite?
@@ -97,7 +101,7 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
             maxDistance: loaded.doubleClickMaxDistance
         )
         composerClassifier = GestureClassifier(
-            interval: loaded.doubleClickInterval,
+            interval: loaded.composerDoubleClickInterval,
             maxDistance: loaded.doubleClickMaxDistance
         )
         eventTap = EventTapService(buttonNumber: Int64(loaded.triggerButtonNumber))
@@ -754,6 +758,52 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         refreshRuntime()
     }
 
+    private func handleComposerLaunchClick(
+        application: NSRunningApplication,
+        point: CGPoint
+    ) {
+        let gesture = composerClassifier.ingest(
+            at: ProcessInfo.processInfo.systemUptime,
+            point: point
+        )
+        diagnostics.write(
+            "COMPOSER_LAUNCH_GESTURE gesture=\(gesture) " +
+            "pending=\(composerClassifier.pendingClickCount)"
+        )
+        switch gesture {
+        case .pendingSingle:
+            pendingComposerLaunchWorkItem?.cancel()
+            let generation = composerLaunchGeneration + 1
+            composerLaunchGeneration = generation
+            let work = DispatchWorkItem { [weak self] in
+                Task { @MainActor in
+                    guard let self,
+                          self.composerLaunchGeneration == generation,
+                          self.preferences.mappingEnabled,
+                          self.voiceSession == nil,
+                          !self.autoPasteInProgress,
+                          !application.isTerminated,
+                          self.isFrontmost(pid: application.processIdentifier) else {
+                        return
+                    }
+                    self.beginVoiceComposer(application: application, point: point)
+                }
+            }
+            pendingComposerLaunchWorkItem = work
+            DispatchQueue.main.asyncAfter(
+                deadline: .now() + preferences.composerDoubleClickInterval,
+                execute: work
+            )
+        case .doubleClick:
+            pendingComposerLaunchWorkItem?.cancel()
+            pendingComposerLaunchWorkItem = nil
+            composerLaunchGeneration += 1
+            composerClassifier.reset()
+            diagnostics.write("DOUBLE_CLICK_RETURN_QUEUED_BEFORE_VOICE")
+            sendReturnWhenTargetActive(pid: application.processIdentifier)
+        }
+    }
+
     private func beginVoiceComposer(
         application: NSRunningApplication,
         point: CGPoint
@@ -771,10 +821,6 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         let generation = composerGeneration
         pendingReturnAfterPaste = false
         composerClassifier.reset()
-        _ = composerClassifier.ingest(
-            at: ProcessInfo.processInfo.systemUptime,
-            point: point
-        )
         let panel = ensureVoiceComposer()
         panel.configureBadge(shortcut: preferences.voiceShortcut)
         panel.resetForNewSession()
@@ -793,35 +839,31 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
             "COMPOSER_OPENED target=\(application.bundleIdentifier ?? "unknown") " +
             "pid=\(application.processIdentifier)"
         )
-
-        let work = DispatchWorkItem { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
             Task { @MainActor in
                 guard let self, self.composerGeneration == generation,
                       var session = self.voiceSession,
-                      session.state == .preparing,
-                      self.composerClassifier.pendingClickCount == 1 else { return }
+                      session.state == .preparing else { return }
                 self.sendVoiceShortcut()
                 session.optionSent = true
                 session.state = .listening
                 if self.micActive { session.didSeeMicrophone = true }
                 self.voiceSession = session
                 self.voiceComposer?.setState(.listening)
-                self.composerClassifier.reset()
                 self.diagnostics.write("COMPOSER_VOICE_STARTED")
                 self.scheduleComposerStartTimeout(generation: generation)
             }
         }
-        composerStartWorkItem = work
-        DispatchQueue.main.asyncAfter(
-            deadline: .now() + preferences.doubleClickInterval,
-            execute: work
-        )
     }
 
     private func handleComposerClick(at point: CGPoint) {
         guard var session = voiceSession else { return }
         let now = ProcessInfo.processInfo.systemUptime
         let gesture = composerClassifier.ingest(at: now, point: point)
+        diagnostics.write(
+            "COMPOSER_GESTURE state=\(Self.string(for: session.state)) " +
+            "gesture=\(gesture) pending=\(composerClassifier.pendingClickCount)"
+        )
 
         if session.state == .transcribing {
             if gesture == .doubleClick {
@@ -833,13 +875,10 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
 
         if session.state == .preparing {
             if gesture == .doubleClick {
-                composerStartWorkItem?.cancel()
-                composerStartWorkItem = nil
-                cancelVoiceComposer(reason: "double_click_before_start")
-                if preferences.doubleClickAction == .returnKey {
-                    doubleClickSends += 1
-                    _ = keyboard.sendReturn()
-                    diagnostics.write("DOUBLE_CLICK_RETURN_BEFORE_VOICE")
+                let targetPID = session.originalPID
+                diagnostics.write("DOUBLE_CLICK_RETURN_QUEUED_BEFORE_VOICE")
+                cancelVoiceComposer(reason: "double_click_before_start") { [weak self] in
+                    self?.sendReturnWhenTargetActive(pid: targetPID)
                 }
             }
             return
@@ -879,7 +918,6 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         guard var session = voiceSession, session.state == .listening else { return }
         composerToggleWorkItem?.cancel()
         composerToggleWorkItem = nil
-        composerClassifier.reset()
         mappedClicks += 1
         session.state = .transcribing
         session.stoppedAt = ProcessInfo.processInfo.systemUptime
@@ -993,6 +1031,8 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         let screen = screenContaining(NSEvent.mouseLocation)
         let shouldPaste = preferences.autoPaste
         autoPasteInProgress = shouldPaste
+        pasteShortcutSentForCurrentCycle = false
+        returnAfterPasteScheduled = false
         composerTransitioning = true
         let generation = composerGeneration
         restoreApplication(pid: session.originalPID)
@@ -1107,6 +1147,7 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
                     return
                 }
                 self.lastAutoPasteSent = true
+                self.pasteShortcutSentForCurrentCycle = true
                 self.diagnostics.write("PASTE_SHORTCUT_SENT target=\(target.bundleID)")
                 self.showToast(
                     "已发送粘贴",
@@ -1114,21 +1155,9 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
                     tint: .systemGreen
                 )
                 if self.preferences.pasteThenReturn || self.pendingReturnAfterPaste {
-                    self.pendingReturnAfterPaste = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
-                        Task { @MainActor in
-                            guard let self else { return }
-                            _ = self.keyboard.sendReturn()
-                            self.diagnostics.write("RETURN_AFTER_PASTE_SENT")
-                            self.finishPasteCycle()
-                        }
-                    }
+                    self.scheduleReturnAfterPaste()
                 } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.38) { [weak self] in
-                        Task { @MainActor in
-                            self?.finishPasteCycle()
-                        }
-                    }
+                    self.schedulePasteCycleCompletion()
                 }
             }
         }
@@ -1169,8 +1198,12 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     private func finishPasteCycle() {
+        pasteCycleCompletionWorkItem?.cancel()
+        pasteCycleCompletionWorkItem = nil
         autoPasteInProgress = false
         pendingReturnAfterPaste = false
+        pasteShortcutSentForCurrentCycle = false
+        returnAfterPasteScheduled = false
         refreshRuntime()
         if preferences.restoreClipboardAfterPaste,
            let write = latestClipboardWrite {
@@ -1187,8 +1220,12 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     private func failPaste(screen: NSScreen?) {
+        pasteCycleCompletionWorkItem?.cancel()
+        pasteCycleCompletionWorkItem = nil
         autoPasteInProgress = false
         pendingReturnAfterPaste = false
+        pasteShortcutSentForCurrentCycle = false
+        returnAfterPasteScheduled = false
         lastAutoPasteSent = false
         refreshRuntime()
         showToast(
@@ -1217,13 +1254,51 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
 
     private func registerPostPasteClick(at point: CGPoint) {
         let now = ProcessInfo.processInfo.systemUptime
-        if directClassifier.ingest(at: now, point: point) == .doubleClick {
+        let gesture = composerClassifier.ingest(at: now, point: point)
+        diagnostics.write(
+            "COMPOSER_GESTURE state=pasting gesture=\(gesture) " +
+            "pending=\(composerClassifier.pendingClickCount)"
+        )
+        if gesture == .doubleClick {
             pendingReturnAfterPaste = true
             diagnostics.write("RETURN_QUEUED_DURING_PASTE")
+            if pasteShortcutSentForCurrentCycle {
+                scheduleReturnAfterPaste()
+            }
         }
     }
 
-    private func cancelVoiceComposer(reason: String) {
+    private func scheduleReturnAfterPaste() {
+        guard pasteShortcutSentForCurrentCycle, !returnAfterPasteScheduled else { return }
+        returnAfterPasteScheduled = true
+        pendingReturnAfterPaste = false
+        pasteCycleCompletionWorkItem?.cancel()
+        pasteCycleCompletionWorkItem = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+            Task { @MainActor in
+                guard let self, self.autoPasteInProgress else { return }
+                _ = self.keyboard.sendReturn()
+                self.diagnostics.write("RETURN_AFTER_PASTE_SENT")
+                self.finishPasteCycle()
+            }
+        }
+    }
+
+    private func schedulePasteCycleCompletion() {
+        pasteCycleCompletionWorkItem?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            Task { @MainActor in
+                self?.finishPasteCycle()
+            }
+        }
+        pasteCycleCompletionWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.38, execute: work)
+    }
+
+    private func cancelVoiceComposer(
+        reason: String,
+        onRestored: (() -> Void)? = nil
+    ) {
         guard let session = voiceSession else { return }
         cancelSessionTimers()
         if session.state == .listening {
@@ -1233,11 +1308,14 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         voiceComposerVisible = false
         pendingReturnAfterPaste = false
         autoPasteInProgress = false
+        pasteShortcutSentForCurrentCycle = false
+        returnAfterPasteScheduled = false
         composerGeneration += 1
         diagnostics.write("COMPOSER_CANCELLED reason=\(reason)")
         voiceComposer?.dismiss(animated: true) { [weak self] in
             Task { @MainActor in
                 self?.restoreApplication(pid: session.originalPID)
+                onRestored?()
             }
         }
         refreshRuntime()
@@ -1253,6 +1331,8 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         voiceComposerVisible = false
         pendingReturnAfterPaste = false
         autoPasteInProgress = false
+        pasteShortcutSentForCurrentCycle = false
+        returnAfterPasteScheduled = false
         composerGeneration += 1
         diagnostics.write("COMPOSER_FAILED reason=\(reason)")
         let screen = screenContaining(NSEvent.mouseLocation)
@@ -1293,6 +1373,40 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         NSApp.deactivate()
         let activated = application.activate(options: [])
         diagnostics.write("RESTORE_APP pid=\(pid) activated=\(activated)")
+    }
+
+    private func sendReturnWhenTargetActive(pid: pid_t, attempt: Int = 0) {
+        guard preferences.doubleClickAction == .returnKey,
+              let application = NSRunningApplication(processIdentifier: pid),
+              !application.isTerminated else {
+            diagnostics.write("DOUBLE_CLICK_RETURN_SKIPPED reason=target_unavailable")
+            return
+        }
+        if isFrontmost(pid: pid) {
+            let sent = keyboard.sendReturn()
+            if sent {
+                doubleClickSends += 1
+                refreshRuntime()
+            }
+            diagnostics.write(
+                "DOUBLE_CLICK_RETURN_BEFORE_VOICE sent=\(sent) " +
+                "attempt=\(attempt) frontmost=true"
+            )
+            return
+        }
+        guard attempt < 20 else {
+            diagnostics.write(
+                "DOUBLE_CLICK_RETURN_SKIPPED reason=target_not_frontmost " +
+                "attempt=\(attempt)"
+            )
+            return
+        }
+        _ = application.activate(options: [])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.04) { [weak self] in
+            Task { @MainActor in
+                self?.sendReturnWhenTargetActive(pid: pid, attempt: attempt + 1)
+            }
+        }
     }
 
     private func restore(application: NSRunningApplication) {
@@ -1362,8 +1476,6 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     private func cancelSessionTimers() {
-        composerStartWorkItem?.cancel()
-        composerStartWorkItem = nil
         composerToggleWorkItem?.cancel()
         composerToggleWorkItem = nil
         transcriptCheckWorkItem?.cancel()
@@ -1376,8 +1488,15 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
     private func cancelAllScheduledWork() {
         cancelPendingSingle()
         cancelSessionTimers()
+        pendingComposerLaunchWorkItem?.cancel()
+        pendingComposerLaunchWorkItem = nil
+        composerLaunchGeneration += 1
+        pasteCycleCompletionWorkItem?.cancel()
+        pasteCycleCompletionWorkItem = nil
         autoPasteInProgress = false
         pendingReturnAfterPaste = false
+        pasteShortcutSentForCurrentCycle = false
+        returnAfterPasteScheduled = false
     }
 
     private func persistPreferences() {
@@ -1582,7 +1701,7 @@ extension AppController: @preconcurrency EventTapServiceDelegate {
         switch behavior {
         case .composer:
             if let frontmost {
-                beginVoiceComposer(application: frontmost, point: point)
+                handleComposerLaunchClick(application: frontmost, point: point)
             } else {
                 handleDirectClick(at: point)
             }

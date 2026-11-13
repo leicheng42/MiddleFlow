@@ -452,7 +452,7 @@ struct SettingsRootView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text("双击行为")
                                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                            Text("双击间隔 \(Int(app.preferences.doubleClickInterval * 1000)) ms · 位移阈值 \(Int(app.preferences.doubleClickMaxDistance)) pt")
+                            Text("普通应用 \(Int(app.preferences.doubleClickInterval * 1000)) ms · UU Remote \(Int(app.preferences.composerDoubleClickInterval * 1000)) ms · 位移阈值 \(Int(app.preferences.doubleClickMaxDistance)) pt")
                                 .font(.system(size: 11.5))
                                 .foregroundStyle(.secondary)
                         }

@@ -62,5 +62,9 @@ struct AppPreferences: Codable, Equatable {
     var doubleClickInterval = 0.28
     var doubleClickMaxDistance = 90.0
 
+    var composerDoubleClickInterval: TimeInterval {
+        max(0.32, doubleClickInterval)
+    }
+
     static let defaults = AppPreferences()
 }

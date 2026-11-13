@@ -10,7 +10,7 @@ if [[ -z "$IDENTITY" ]]; then
   exit 1
 fi
 
-./scripts/build_app.sh
+MIDDLEFLOW_SKIP_SIGNING=1 ./scripts/build_app.sh
 
 SOURCE="build/MiddleFlow.app"
 TARGET="build/MiddleFlow-legacy.app"
@@ -24,8 +24,6 @@ mv "$TARGET/Contents/MacOS/MiddleFlow" "$TARGET/Contents/MacOS/MiddleOptionBridg
 /usr/libexec/PlistBuddy -c 'Set :CFBundleExecutable MiddleOptionBridge' "$TARGET/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleName MiddleFlow' "$TARGET/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName MiddleFlow' "$TARGET/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 2.0.0' "$TARGET/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 1' "$TARGET/Contents/Info.plist"
 
 codesign --force --options runtime --timestamp=none \
   --identifier local.leicheng.middle-option-bridge \

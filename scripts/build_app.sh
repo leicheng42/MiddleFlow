@@ -37,6 +37,11 @@ rm -rf "$APP"
 mkdir -p build
 cp -R "$SOURCE_APP" "$APP"
 
+if [[ "${MIDDLEFLOW_SKIP_SIGNING:-0}" == "1" ]]; then
+  echo "Built unsigned: $APP"
+  exit 0
+fi
+
 IDENTITY="${MIDDLEFLOW_SIGN_IDENTITY:-}"
 if [[ -n "$IDENTITY" ]]; then
   codesign --force --options runtime --timestamp --sign "$IDENTITY" "$APP"

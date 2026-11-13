@@ -40,7 +40,7 @@ See [docs/windows.md](docs/windows.md) for the Windows scope and verification bo
 
 Download the latest `MiddleFlow-*-macOS-universal.zip` or `.dmg` from GitHub Releases.
 
-The current local build is signed with an Apple Development certificate. Public distribution must additionally be signed with **Developer ID Application** and notarized by Apple. Until that is available, downloaded builds may show the standard Gatekeeper warning. Do not disable Gatekeeper or modify TCC as an installation workaround.
+GitHub preview builds are ad-hoc signed for integrity, and local development builds may use an Apple Development certificate. Public distribution must additionally be signed with **Developer ID Application** and notarized by Apple. Until that is available, downloaded builds may show the standard Gatekeeper warning. Do not disable Gatekeeper or modify TCC as an installation workaround.
 
 ### Build from source
 
@@ -62,7 +62,7 @@ open build/MiddleFlow.app
 To create the zip and DMG:
 
 ```sh
-./scripts/package_release.sh 2.0.0
+./scripts/package_release.sh 2.0.1
 ```
 
 Artifacts are written to `dist/`.

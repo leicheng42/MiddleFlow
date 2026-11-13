@@ -19,6 +19,14 @@ final class GestureClassifierTests: XCTestCase {
         XCTAssertEqual(classifier.ingest(at: 10.4), .pendingSingle)
     }
 
+    func testComposerUsesLongerDoubleClickWindow() {
+        var classifier = GestureClassifier(
+            interval: AppPreferences.defaults.composerDoubleClickInterval
+        )
+        XCTAssertEqual(classifier.ingest(at: 10), .pendingSingle)
+        XCTAssertEqual(classifier.ingest(at: 10.30), .doubleClick)
+    }
+
     func testTwoClicksFarApartAreTwoSingles() {
         var classifier = GestureClassifier(interval: 0.28, maxDistance: 50)
         XCTAssertEqual(

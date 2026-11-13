@@ -59,11 +59,11 @@ dotnet run --project .\tests\MiddleFlow.Windows.Tests\MiddleFlow.Windows.Tests.c
 ## 发布
 
 ```powershell
-.\scripts\publish.ps1 -Runtime win-x64 -Version 2.0.0
-.\scripts\publish.ps1 -Runtime win-arm64 -Version 2.0.0
+.\scripts\publish.ps1 -Runtime win-x64 -Version 2.0.1
+.\scripts\publish.ps1 -Runtime win-arm64 -Version 2.0.1
 ```
 
-脚本使用 .NET 8 self-contained single-file 发布，输出到 `windows/dist/<runtime>`，并生成 `windows/dist/MiddleFlow-<version>-<runtime>.zip`。`-Version` 默认是 `2.0.0`，也接受带前导 `v` 的版本号；发布包不依赖目标机器预装 .NET。
+脚本使用 .NET 8 self-contained single-file 发布，输出到 `windows/dist/<runtime>`，并生成 `windows/dist/MiddleFlow-<version>-<runtime>.zip`。`-Version` 默认是 `2.0.1`，也接受带前导 `v` 的版本号；发布包不依赖目标机器预装 .NET。
 
 ## 配置与诊断
 
@@ -115,8 +115,8 @@ MiddleFlow turns the mouse middle button into a Windows voice-input bridge for t
 ```powershell
 cd windows
 .\scripts\build.ps1
-.\scripts\publish.ps1 -Runtime win-x64 -Version 2.0.0
-.\scripts\publish.ps1 -Runtime win-arm64 -Version 2.0.0
+.\scripts\publish.ps1 -Runtime win-x64 -Version 2.0.1
+.\scripts\publish.ps1 -Runtime win-arm64 -Version 2.0.1
 ```
 
 The GitHub Actions workflow builds both architectures and runs the core smoke tests plus the Win32 input-layout test. Real hardware validation on Windows 10/11 is still required before calling a build production-ready.

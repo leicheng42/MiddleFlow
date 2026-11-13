@@ -18,5 +18,6 @@ final class PreferencesTests: XCTestCase {
         let preferences = AppPreferences.defaults
         XCTAssertEqual(preferences.voiceShortcut, .rightOption)
         XCTAssertTrue(preferences.composerBundleIDs.contains(TargetPolicy.uuRemoteBundleID))
+        XCTAssertEqual(preferences.composerDoubleClickInterval, 0.32, accuracy: 0.001)
     }
 }
