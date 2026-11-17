@@ -71,6 +71,16 @@ try
     Check(!loaded.MappingEnabled, "settings mapping roundtrip");
     Check(loaded.DoubleClickIntervalMs == 333, "settings interval roundtrip");
     Check(loaded.CanvasAppPatterns == "custom.exe", "settings patterns roundtrip");
+    Check(!loaded.RestoreClipboard, "clipboard retention defaults on");
+
+    var legacyPath = Path.Combine(tempRoot, "legacy-settings.json");
+    File.WriteAllText(legacyPath, "{\"RestoreClipboard\":true}");
+    var legacyStore = new SettingsStore(legacyPath);
+    var migrated = legacyStore.Load();
+    Check(!migrated.RestoreClipboard, "legacy clipboard setting migrates to retention");
+    Check(
+        migrated.ClipboardRetentionMigrationCompleted,
+        "clipboard migration marker is persisted");
 
     var diagnostics = new DiagnosticsLog(paths.DiagnosticsPath, paths.DiagnosticsArchivePath);
     diagnostics.Write("TEST_EVENT", "chars=4 process=test");

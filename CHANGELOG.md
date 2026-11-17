@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.1 - 2026-11-18
+
+- Added the same default clipboard-retention behavior and migration to the Windows edition.
+- Added a positive “Keep latest transcript on clipboard” setting on Windows and retained the option to restore the previous clipboard after paste.
+
 ## 2.1.0 - 2026-11-17
 
 - Keep the latest recognized transcript on the clipboard by default after auto-paste, with a positive “Keep latest transcript on clipboard” setting.

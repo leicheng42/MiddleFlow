@@ -11,7 +11,7 @@ MiddleFlow 把鼠标中键变成一个 Windows 语音输入入口：单击开始
 - 全局低层鼠标钩子拦截中键（button 2），启用映射时抑制原始中键事件。
 - 单击按住右侧 Alt（`VK_RMENU` / AltGr），再次单击释放；豆包 Windows 输入法使用长按右侧 Alt。
 - 双击停止语音；普通应用发送 Return，画布浮层在文字稳定后先粘贴再回车。
-- UU Remote 等画布应用使用顶部浮层，支持实时 IME 组合文本、快速稳定检测、自动粘贴和剪贴板恢复。
+- UU Remote 等画布应用使用顶部浮层，支持实时 IME 组合文本、快速稳定检测、自动粘贴和剪贴板保留。
 - 普通应用使用直接模式，不弹浮层，豆包文字直接进入目标输入框。
 - 托盘菜单：打开设置、语音测试、暂停/启用映射、退出。
 - 设置页：概览、手势、语音、豆包输入法、应用、权限与状态、诊断、关于。
@@ -59,11 +59,11 @@ dotnet run --project .\tests\MiddleFlow.Windows.Tests\MiddleFlow.Windows.Tests.c
 ## 发布
 
 ```powershell
-.\scripts\publish.ps1 -Runtime win-x64 -Version 2.1.0
-.\scripts\publish.ps1 -Runtime win-arm64 -Version 2.1.0
+.\scripts\publish.ps1 -Runtime win-x64 -Version 2.1.1
+.\scripts\publish.ps1 -Runtime win-arm64 -Version 2.1.1
 ```
 
-脚本使用 .NET 8 self-contained single-file 发布，输出到 `windows/dist/<runtime>`，并生成 `windows/dist/MiddleFlow-<version>-<runtime>.zip`。`-Version` 默认是 `2.1.0`，也接受带前导 `v` 的版本号；发布包不依赖目标机器预装 .NET。
+脚本使用 .NET 8 self-contained single-file 发布，输出到 `windows/dist/<runtime>`，并生成 `windows/dist/MiddleFlow-<version>-<runtime>.zip`。`-Version` 默认是 `2.1.1`，也接受带前导 `v` 的版本号；发布包不依赖目标机器预装 .NET。
 
 ## 配置与诊断
 
@@ -115,8 +115,8 @@ MiddleFlow turns the mouse middle button into a Windows voice-input bridge for t
 ```powershell
 cd windows
 .\scripts\build.ps1
-.\scripts\publish.ps1 -Runtime win-x64 -Version 2.1.0
-.\scripts\publish.ps1 -Runtime win-arm64 -Version 2.1.0
+.\scripts\publish.ps1 -Runtime win-x64 -Version 2.1.1
+.\scripts\publish.ps1 -Runtime win-arm64 -Version 2.1.1
 ```
 
 The GitHub Actions workflow builds both architectures and runs the core smoke tests plus the Win32 input-layout test. Real hardware validation on Windows 10/11 is still required before calling a build production-ready.

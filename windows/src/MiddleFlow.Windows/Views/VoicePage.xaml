@@ -116,13 +116,13 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="粘贴后恢复剪贴板" Style="{StaticResource CardTitleStyle}" FontSize="13" />
-                        <TextBlock Text="仅在剪贴板内容仍是本次转写时恢复，避免覆盖新内容"
+                        <TextBlock Text="保留最新转写到剪贴板" Style="{StaticResource CardTitleStyle}" FontSize="13" />
+                        <TextBlock Text="默认开启；自动粘贴后仍可从剪贴板再次使用本次转写"
                                    Style="{StaticResource MutedTextStyle}"
                                    Margin="0,3,0,0" />
                     </StackPanel>
                     <CheckBox Grid.Column="1"
-                              IsChecked="{Binding RestoreClipboard, Mode=TwoWay}"
+                              IsChecked="{Binding KeepTranscriptInClipboard, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchStyle}"
                               VerticalAlignment="Center" />
                 </Grid>

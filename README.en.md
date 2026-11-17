@@ -62,7 +62,7 @@ open build/MiddleFlow.app
 To create the zip and DMG:
 
 ```sh
-./scripts/package_release.sh 2.1.0
+./scripts/package_release.sh 2.1.1
 ```
 
 Artifacts are written to `dist/`.

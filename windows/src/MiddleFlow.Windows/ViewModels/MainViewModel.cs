@@ -42,7 +42,7 @@ public enum VoiceMode
 
 public sealed class MainViewModel : ObservableObject, IDisposable
 {
-    public const string ProductVersion = "2.1.0";
+    public const string ProductVersion = "2.1.1";
     public const string RepositoryUrl = "https://github.com/leicheng42/MiddleFlow";
 
     private readonly Dispatcher _dispatcher;
@@ -287,16 +287,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    public bool RestoreClipboard
+    public bool KeepTranscriptInClipboard
     {
-        get => Settings.RestoreClipboard;
+        get => !Settings.RestoreClipboard;
         set
         {
-            if (Settings.RestoreClipboard == value)
+            if (Settings.RestoreClipboard == !value)
             {
                 return;
             }
-            Settings.RestoreClipboard = value;
+            Settings.RestoreClipboard = !value;
             SaveSettings();
             OnPropertyChanged();
         }
@@ -1117,6 +1117,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Settings.AutoPaste = defaults.AutoPaste;
         Settings.PasteThenEnter = defaults.PasteThenEnter;
         Settings.RestoreClipboard = defaults.RestoreClipboard;
+        Settings.ClipboardRetentionMigrationCompleted = true;
         Settings.ClipboardRestoreDelayMs = defaults.ClipboardRestoreDelayMs;
         Settings.StartAtLogin = false;
         Settings.ShowTrayNotifications = defaults.ShowTrayNotifications;
@@ -1134,7 +1135,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             nameof(DirectModeEnabled),
             nameof(AutoPaste),
             nameof(PasteThenEnter),
-            nameof(RestoreClipboard),
+            nameof(KeepTranscriptInClipboard),
             nameof(StartAtLogin),
             nameof(ShowTrayNotifications),
             nameof(CanvasAppPatterns),

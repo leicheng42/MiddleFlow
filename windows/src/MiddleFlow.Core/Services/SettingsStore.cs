@@ -26,13 +26,24 @@ public sealed class SettingsStore
             if (!File.Exists(_path))
             {
                 var fresh = new AppSettings();
+                fresh.ClipboardRetentionMigrationCompleted = true;
                 fresh.Normalize();
                 return fresh;
             }
             var settings = JsonSerializer.Deserialize<AppSettings>(
                 File.ReadAllText(_path),
                 _json) ?? new AppSettings();
+            var migratedClipboardRetention = !settings.ClipboardRetentionMigrationCompleted;
+            if (migratedClipboardRetention)
+            {
+                settings.RestoreClipboard = false;
+                settings.ClipboardRetentionMigrationCompleted = true;
+            }
             settings.Normalize();
+            if (migratedClipboardRetention)
+            {
+                Save(settings);
+            }
             return settings;
         }
         catch

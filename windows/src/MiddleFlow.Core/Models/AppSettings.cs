@@ -9,7 +9,8 @@ public sealed class AppSettings
     public bool DirectModeEnabled { get; set; } = true;
     public bool AutoPaste { get; set; } = true;
     public bool PasteThenEnter { get; set; }
-    public bool RestoreClipboard { get; set; } = true;
+    public bool RestoreClipboard { get; set; } = false;
+    public bool ClipboardRetentionMigrationCompleted { get; set; }
     public int ClipboardRestoreDelayMs { get; set; } = 1800;
     public bool StartAtLogin { get; set; }
     public bool ShowTrayNotifications { get; set; } = true;
@@ -44,6 +45,7 @@ public sealed class AppSettings
             AutoPaste = AutoPaste,
             PasteThenEnter = PasteThenEnter,
             RestoreClipboard = RestoreClipboard,
+            ClipboardRetentionMigrationCompleted = ClipboardRetentionMigrationCompleted,
             ClipboardRestoreDelayMs = ClipboardRestoreDelayMs,
             StartAtLogin = StartAtLogin,
             ShowTrayNotifications = ShowTrayNotifications,
