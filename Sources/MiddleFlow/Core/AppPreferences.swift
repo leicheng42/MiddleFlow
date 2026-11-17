@@ -54,7 +54,8 @@ struct AppPreferences: Codable, Equatable {
     var voiceShortcut: VoiceShortcut = .rightOption
     var autoPaste = true
     var pasteThenReturn = false
-    var restoreClipboardAfterPaste = true
+    var restoreClipboardAfterPaste = false
+    var clipboardRetentionMigrationCompleted: Bool?
     var composerBundleIDs: Set<String> = [TargetPolicy.uuRemoteBundleID]
     var launchAtLogin = true
     var onboardingCompleted = false
@@ -64,6 +65,13 @@ struct AppPreferences: Codable, Equatable {
 
     var composerDoubleClickInterval: TimeInterval {
         max(0.32, doubleClickInterval)
+    }
+
+    mutating func applyClipboardRetentionMigrationIfNeeded() -> Bool {
+        guard clipboardRetentionMigrationCompleted != true else { return false }
+        restoreClipboardAfterPaste = false
+        clipboardRetentionMigrationCompleted = true
+        return true
     }
 
     static let defaults = AppPreferences()

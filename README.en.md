@@ -28,7 +28,7 @@ See [docs/windows.md](docs/windows.md) for the Windows scope and verification bo
 - Doubao input-method detection: checks the installed bundle, system registration, current input source, and version, then shows the appropriate setup step.
 - Doubao-style floating composer for UU Remote and other canvas apps.
 - Automatic paste: restores the target app, returns to the original input point, and sends `Cmd+V` after transcription.
-- Clipboard protection: restores the previous clipboard only if it has not changed.
+- Clipboard retention: keeps the latest transcript on the clipboard by default for reuse; settings can restore the previous clipboard after a successful paste instead.
 - Menu bar controls: open settings, pause/resume mapping, test, paste the latest transcript, check permission, open diagnostics, and quit.
 - Native settings window: the top bar shows the current page, mapping state, and Doubao state; pages include Overview, Gestures, Voice, Doubao Input Method, Apps, Permissions, Diagnostics, and About.
 - Universal macOS build: Apple Silicon and Intel.
@@ -62,7 +62,7 @@ open build/MiddleFlow.app
 To create the zip and DMG:
 
 ```sh
-./scripts/package_release.sh 2.0.1
+./scripts/package_release.sh 2.1.0
 ```
 
 Artifacts are written to `dist/`.

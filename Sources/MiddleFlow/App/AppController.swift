@@ -94,7 +94,10 @@ final class AppController: NSObject, NSApplicationDelegate, ObservableObject {
         paths = .live
         preferencesStore = PreferencesStore(url: paths.preferencesURL)
         diagnostics = Diagnostics(logURL: paths.logURL)
-        let loaded = preferencesStore.load()
+        var loaded = preferencesStore.load()
+        if loaded.applyClipboardRetentionMigrationIfNeeded() {
+            preferencesStore.save(loaded)
+        }
         preferences = loaded
         directClassifier = GestureClassifier(
             interval: loaded.doubleClickInterval,

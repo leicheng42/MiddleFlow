@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-VERSION="${1:-2.0.1}"
+VERSION="${1:-2.1.0}"
 if [[ "${PACKAGE_SKIP_BUILD:-0}" != "1" ]]; then
   ./scripts/build_app.sh
 fi

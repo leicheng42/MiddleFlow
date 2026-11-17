@@ -560,14 +560,14 @@ struct SettingsRootView: View {
                     }
                     Divider().opacity(0.55)
                     PreferenceRow(
-                        icon: "arrow.uturn.backward.circle",
-                        title: "成功后恢复剪贴板",
-                        detail: "粘贴发送成功后，若剪贴板未被修改则恢复原内容"
+                        icon: "doc.on.clipboard.fill",
+                        title: "保留最新转写到剪贴板",
+                        detail: "默认开启；自动粘贴后，最新转写仍可从剪贴板再次使用"
                     ) {
                         FlowToggle(
                             isOn: Binding(
-                                get: { app.preferences.restoreClipboardAfterPaste },
-                                set: { app.setRestoreClipboard($0) }
+                                get: { !app.preferences.restoreClipboardAfterPaste },
+                                set: { app.setRestoreClipboard(!$0) }
                             )
                         )
                     }

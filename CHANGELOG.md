@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.0 - 2026-11-17
+
+- Keep the latest recognized transcript on the clipboard by default after auto-paste, with a positive “Keep latest transcript on clipboard” setting.
+- Migrated existing installations to the new clipboard-retention default while preserving the option to restore the previous clipboard after a successful paste.
+
 ## 2.0.1 - 2026-11-14
 
 - Added Doubao input-method detection with installation, registration, current-source, and version guidance.

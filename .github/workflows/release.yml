@@ -134,22 +134,22 @@ jobs:
           name: MiddleFlow ${{ github.ref_name }}
           prerelease: ${{ steps.signing_mode.outputs.mode == 'preview' }}
           body: |
-            ## 2.0.1
+            ## 2.1.0
 
-            - 增加豆包输入法安装、注册和当前输入源检测，并提供完整安装指引。
-            - 修复 UU Remote 双击中键发送 Return：先恢复远控窗口焦点，再发送回车。
-            - UU Remote 双击不再闪现语音悬浮窗，使用 320 ms 响应窗口区分单击和双击。
-            - 提升豆包稳定文本识别和自动粘贴速度，完善设置顶栏和双语文档。
+            - 识别完成的文字现在默认保留在剪贴板中，自动粘贴后仍可继续使用。
+            - 设置页新增“保留最新转写到剪贴板”，也可选择粘贴后恢复原剪贴板。
+            - 已安装用户会自动迁移到新的默认行为。
+            - 保留 UU Remote 双击发送、焦点恢复和无浮层闪烁修复。
             - 提供 macOS Universal、Windows x64 和 Windows ARM64 预览包。
 
             macOS 预览包未使用 Developer ID 签名或 Apple notarization，首次打开可能需要右键选择“打开”。Windows 预览包尚未做 Authenticode 签名。
 
             ## English
 
-            - Added Doubao input-method installation, registration, current-source, and version detection with setup guidance.
-            - Fixed UU Remote double-click Return by restoring remote-window focus before sending Enter.
-            - Removed the voice-composer flash on UU Remote double-click and added a responsive 320 ms gesture window.
-            - Improved transcript stabilization and auto-paste latency, the settings top bar, and bilingual documentation.
+            - Recognized text now remains on the clipboard by default after automatic paste.
+            - Added a positive “Keep latest transcript on clipboard” setting, with an option to restore the previous clipboard after paste.
+            - Existing installations migrate automatically to the new default.
+            - Retains the UU Remote double-click, focus restoration, and no-flash fixes.
             - Includes macOS Universal, Windows x64, and Windows ARM64 preview packages.
 
             The macOS preview is not Developer ID signed or notarized and may require right-click Open. The Windows preview is not Authenticode signed.
